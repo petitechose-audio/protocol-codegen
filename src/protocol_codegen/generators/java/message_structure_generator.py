@@ -8,13 +8,16 @@ This provides a single import point for all protocol messages.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.message import Message
 
 
-def generate_message_structure_java(messages: list[Message], package: str, output_path: Path) -> str:
+def generate_message_structure_java(
+    messages: list[Message], package: str, output_path: Path
+) -> str:
     """
     Generate MessageStructure.java.
 
@@ -30,13 +33,13 @@ def generate_message_structure_java(messages: list[Message], package: str, outpu
     imports: list[str] = []
     for message in messages:
         # Convert SCREAMING_SNAKE_CASE to PascalCase
-        pascal_name: str = ''.join(word.capitalize() for word in message.name.split('_'))
+        pascal_name: str = "".join(word.capitalize() for word in message.name.split("_"))
         class_name: str = f"{pascal_name}Message"
-        imports.append(f'import {package}.protocol.struct.{class_name};')
+        imports.append(f"import {package}.protocol.struct.{class_name};")
 
-    imports_str: str = '\n'.join(imports)
+    imports_str: str = "\n".join(imports)
 
-    code = f'''package {package}.protocol;
+    code = f"""package {package}.protocol;
 
 {imports_str}
 
@@ -61,10 +64,10 @@ public class MessageStructure {{
         // Utility class - prevent instantiation
     }}
 }}
-'''
+"""
 
     # Write to file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(code, encoding='utf-8')
+    output_path.write_text(code, encoding="utf-8")
 
     return code

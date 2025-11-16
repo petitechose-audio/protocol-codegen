@@ -19,11 +19,13 @@ Generated Output:
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.loader import TypeRegistry, AtomicType
+    from pathlib import Path
+
+    from protocol_codegen.core.loader import AtomicType, TypeRegistry
 
 
 def generate_encoder_java(type_registry: TypeRegistry, output_path: Path) -> str:
@@ -60,7 +62,7 @@ def _generate_header(builtin_types: dict[str, AtomicType], package: str) -> str:
     """Generate file header with package and class declaration."""
     type_list = ", ".join(builtin_types.keys())
 
-    return f'''package {package};
+    return f"""package {package};
 
 /**
  * Encoder - 7-bit MIDI-safe Encoder/Decoder
@@ -95,7 +97,7 @@ public final class Encoder {{
     // ============================================================================
     // ENCODE METHODS (Type → 7-bit MIDI-safe bytes)
     // ============================================================================
-'''
+"""
 
 
 def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
@@ -106,8 +108,8 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
         java_type = atomic_type.java_type
         desc = atomic_type.description
 
-        if type_name == 'bool':
-            encoders.append(f'''
+        if type_name == "bool":
+            encoders.append(f"""
     /**
      * Encode bool (1 byte: 0x00 or 0x01)
      * {desc}
@@ -118,10 +120,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
     public static byte[] encodeBool({java_type} value) {{
         return new byte[]{{ (byte) (value ? 0x01 : 0x00) }};
     }}
-''')
+""")
 
-        elif type_name == 'uint8':
-            encoders.append(f'''
+        elif type_name == "uint8":
+            encoders.append(f"""
     /**
      * Encode uint8 (1 byte, no transformation needed if < 0x80)
      * {desc}
@@ -132,10 +134,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
     public static byte[] encodeUint8({java_type} value) {{
         return new byte[]{{ (byte) (value & 0x7F) }};
     }}
-''')
+""")
 
-        elif type_name == 'int8':
-            encoders.append(f'''
+        elif type_name == "int8":
+            encoders.append(f"""
     /**
      * Encode int8 (1 byte, signed → unsigned mapping)
      * {desc}
@@ -146,10 +148,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
     public static byte[] encodeInt8({java_type} value) {{
         return new byte[]{{ (byte) (value & 0x7F) }};
     }}
-''')
+""")
 
-        elif type_name == 'uint16':
-            encoders.append(f'''
+        elif type_name == "uint16":
+            encoders.append(f"""
     /**
      * Encode uint16 (2 bytes → 3 bytes, 7-bit encoding)
      * {desc}
@@ -166,10 +168,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
             (byte) ((val >> 14) & 0x03)    // bits 14-15 (only 2 bits needed)
         }};
     }}
-''')
+""")
 
-        elif type_name == 'int16':
-            encoders.append(f'''
+        elif type_name == "int16":
+            encoders.append(f"""
     /**
      * Encode int16 (2 bytes → 3 bytes, 7-bit encoding)
      * {desc}
@@ -186,10 +188,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
             (byte) ((bits >> 14) & 0x03)
         }};
     }}
-''')
+""")
 
-        elif type_name == 'uint32':
-            encoders.append(f'''
+        elif type_name == "uint32":
+            encoders.append(f"""
     /**
      * Encode uint32 (4 bytes → 5 bytes, 7-bit encoding)
      * {desc}
@@ -208,10 +210,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
             (byte) ((val >> 28) & 0x0F)    // bits 28-31 (only 4 bits needed)
         }};
     }}
-''')
+""")
 
-        elif type_name == 'int32':
-            encoders.append(f'''
+        elif type_name == "int32":
+            encoders.append(f"""
     /**
      * Encode int32 (4 bytes → 5 bytes, 7-bit encoding)
      * {desc}
@@ -230,10 +232,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
             (byte) ((bits >> 28) & 0x0F)
         }};
     }}
-''')
+""")
 
-        elif type_name == 'float32':
-            encoders.append(f'''
+        elif type_name == "float32":
+            encoders.append(f"""
     /**
      * Encode float32 (4 bytes → 5 bytes, 7-bit encoding)
      * {desc}
@@ -256,10 +258,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
             (byte) ((unsignedBits >> 28) & 0x0F)    // bits 28-31
         }};
     }}
-''')
+""")
 
-        elif type_name == 'string':
-            encoders.append(f'''
+        elif type_name == "string":
+            encoders.append(f"""
     /**
      * Encode string (variable length: 1 byte length + data)
      * {desc}
@@ -288,13 +290,13 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return result;
     }}
-''')
+""")
 
     return "\n".join(encoders)
 
 
 def _generate_footer() -> str:
     """Generate class closing."""
-    return '''
+    return """
 }  // class Encoder
-'''
+"""

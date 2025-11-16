@@ -3,7 +3,9 @@
 Generate type-safe protocol code (C++, Java) from Python message definitions.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Type checked with pyright](https://img.shields.io/badge/type%20checked-pyright-blue.svg)](https://github.com/microsoft/pyright)
 
 ## Features
 
@@ -137,13 +139,32 @@ See `examples/simple-sensor-network/` for a complete example with:
 
 ## Development
 
-```bash
-# Install dev mode
-pip install -e .
+### Setup
 
-# Run example
-cd examples/simple-sensor-network
-./generate.sh
+```bash
+# Sync dependencies
+uv sync --extra dev
+```
+
+### Available Commands
+
+```bash
+make help          # Show all available commands
+make sync          # Sync all dependencies
+make format        # Format code with ruff
+make lint          # Lint code with ruff
+make type-check    # Type check with pyright
+make all           # Run format, lint, type-check
+make example       # Run example generation
+make clean         # Clean build artifacts
+```
+
+### Quick Development Workflow
+
+```bash
+# Make changes to code
+make format        # Auto-format
+make all           # Verify everything passes
 ```
 
 ## License

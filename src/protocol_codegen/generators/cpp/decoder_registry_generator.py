@@ -10,9 +10,10 @@ Supports optimistic update reconciliation for messages marked with optimistic=Tr
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.message import Message
 
 
@@ -28,25 +29,25 @@ def generate_decoder_registry_hpp(messages: list[Message], output_path: Path) ->
         Generated C++ code
     """
     # Check if any message uses optimistic updates
-    has_optimistic = any(getattr(message, 'optimistic', False) for message in messages)
+    has_optimistic = any(getattr(message, "optimistic", False) for message in messages)
 
     # Generate case statements for each message
     cases: list[str] = []
     for message in messages:
         # Convert SCREAMING_SNAKE_CASE to PascalCase
-        pascal_name = ''.join(word.capitalize() for word in message.name.split('_'))
+        pascal_name = "".join(word.capitalize() for word in message.name.split("_"))
         class_name = f"{pascal_name}Message"
         callback_name = f"on{pascal_name}"
 
         # Check if this message uses optimistic updates
-        is_optimistic = getattr(message, 'optimistic', False)
+        is_optimistic = getattr(message, "optimistic", False)
 
         if is_optimistic:
             # Generate optimistic reconciliation logic
             # ASSUMES: message has parameterIndex, parameterValue, sequenceNumber fields
             # This is currently hardcoded for DeviceMacroValueChange pattern
             # TODO: Make this more generic if other messages need optimistic updates
-            cases.append(f'''        case MessageID::{message.name}:
+            cases.append(f"""        case MessageID::{message.name}:
             if (callbacks.{callback_name}) {{
                 auto decoded = {class_name}::decode(payload, payloadLen);
                 if (decoded.has_value()) {{
@@ -71,10 +72,10 @@ def generate_decoder_registry_hpp(messages: list[Message], output_path: Path) ->
                     callbacks.{callback_name}(msg);
                 }}
             }}
-            break;''')
+            break;""")
         else:
             # Standard passthrough (no optimistic logic)
-            cases.append(f'''        case MessageID::{message.name}:
+            cases.append(f"""        case MessageID::{message.name}:
             if (callbacks.{callback_name}) {{
                 auto decoded = {class_name}::decode(payload, payloadLen);
                 if (decoded.has_value()) {{
@@ -83,16 +84,16 @@ def generate_decoder_registry_hpp(messages: list[Message], output_path: Path) ->
                     callbacks.{callback_name}(msg);
                 }}
             }}
-            break;''')
+            break;""")
 
-    cases_str = '\n'.join(cases)
+    cases_str = "\n".join(cases)
 
     # Conditionally include OptimisticTracker header
-    optimistic_include = ''
+    optimistic_include = ""
     if has_optimistic:
         optimistic_include = '#include "OptimisticTracker.hpp"'
 
-    code = f'''/**
+    code = f"""/**
  * DecoderRegistry.hpp - MessageID to Decoder mapping
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -141,10 +142,10 @@ public:
 }};
 
 }}  // namespace Protocol
-'''
+"""
 
     # Write to file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(code, encoding='utf-8')
+    output_path.write_text(code, encoding="utf-8")
 
     return code

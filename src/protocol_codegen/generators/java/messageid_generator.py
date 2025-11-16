@@ -6,19 +6,21 @@ Simplified version - all messages are sequential, no flow-based grouping.
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.message import Message
+    from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
+    from protocol_codegen.core.message import Message
 
 
 def generate_messageid_java(
     messages: list[Message],
     allocations: dict[str, int],
     type_registry: TypeRegistry,
-    output_path: Path
+    output_path: Path,
 ) -> str:
     """
     Generate MessageID.java with sequential message IDs.
@@ -46,7 +48,7 @@ def generate_messageid_java(
 
 def _generate_header(message_count: int) -> str:
     """Generate file header."""
-    return f'''package com.midi_studio.protocol;
+    return f"""package com.midi_studio.protocol;
 
 /**
  * MessageID - SysEx Message ID Enum
@@ -60,7 +62,7 @@ def _generate_header(message_count: int) -> str:
  * Total messages: {message_count}
  */
 public enum MessageID {{
-'''
+"""
 
 
 def _generate_enum_body(sorted_messages: list[Message], allocations: dict[str, int]) -> str:
@@ -86,7 +88,7 @@ def _generate_enum_body(sorted_messages: list[Message], allocations: dict[str, i
 
 def _generate_methods() -> str:
     """Generate enum methods."""
-    return '''
+    return """
 
     private final byte value;
 
@@ -118,10 +120,10 @@ def _generate_methods() -> str:
     public static int getMessageCount() {
         return values().length;
     }
-'''
+"""
 
 
 def _generate_footer() -> str:
     """Generate file footer."""
-    return '''}
-'''
+    return """}
+"""

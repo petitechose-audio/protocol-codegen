@@ -2,10 +2,17 @@
 name = "protocol-codegen"
 version = "1.0.0"
 description = "Generic bidirectional protocol code generator"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.0.0",
     "click>=8.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyright>=1.1.0",
+    "types-click>=7.1.0",
+    "ruff>=0.8.0",
 ]
 
 [project.scripts]
@@ -18,6 +25,23 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/protocol_codegen"]
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I", "N", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**/*.py" = ["F403", "F405"]
+
+[tool.ruff.format]
+quote-style = "double"

@@ -21,14 +21,16 @@ Generated Output:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypedDict
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
 
 
 class SysExConfig(TypedDict, total=False):
     """SysEx framing configuration"""
+
     start: int
     end: int
     manufacturer_id: int
@@ -41,6 +43,7 @@ class SysExConfig(TypedDict, total=False):
 
 class LimitsConfig(TypedDict, total=False):
     """Protocol encoding limits"""
+
     string_max_length: int
     array_max_items: int
     max_payload_size: int
@@ -49,6 +52,7 @@ class LimitsConfig(TypedDict, total=False):
 
 class RolesConfig(TypedDict, total=False):
     """Role configuration for each platform"""
+
     cpp: str
     java: str
     python: str
@@ -56,13 +60,16 @@ class RolesConfig(TypedDict, total=False):
 
 class ProtocolConfig(TypedDict, total=False):
     """Protocol configuration structure from protocol_config.yaml"""
+
     sysex: SysExConfig
     limits: LimitsConfig
     roles: RolesConfig
     message_id_start: int
 
 
-def generate_constants_hpp(protocol_config: ProtocolConfig, type_registry: TypeRegistry, output_path: Path) -> str:
+def generate_constants_hpp(
+    protocol_config: ProtocolConfig, type_registry: TypeRegistry, output_path: Path
+) -> str:
     """
     Generate ProtocolConstants.hpp from protocol_config.yaml.
 
@@ -82,16 +89,16 @@ def generate_constants_hpp(protocol_config: ProtocolConfig, type_registry: TypeR
         >>> code = generate_constants_hpp(config, registry, Path('ProtocolConstants.hpp'))
     """
     # Extract C++ types from builtin_types.yaml (SSOT)
-    uint8_cpp = type_registry.get('uint8').cpp_type
-    uint16_cpp = type_registry.get('uint16').cpp_type
+    uint8_cpp = type_registry.get("uint8").cpp_type
+    uint16_cpp = type_registry.get("uint16").cpp_type
 
     if uint8_cpp is None or uint16_cpp is None:
         raise ValueError("Missing C++ type mappings for uint8 or uint16 in builtin_types.yaml")
 
     header = _generate_header()
-    sysex_constants = _generate_sysex_constants(protocol_config.get('sysex', {}), uint8_cpp)
-    limits = _generate_limits(protocol_config.get('limits', {}), uint8_cpp, uint16_cpp)
-    role_constants = _generate_role_constants(protocol_config.get('roles', {}))
+    sysex_constants = _generate_sysex_constants(protocol_config.get("sysex", {}), uint8_cpp)
+    limits = _generate_limits(protocol_config.get("limits", {}), uint8_cpp, uint16_cpp)
+    role_constants = _generate_role_constants(protocol_config.get("roles", {}))
     footer = _generate_footer()
 
     full_code = f"{header}\n{sysex_constants}\n{limits}\n{role_constants}\n{footer}"
@@ -100,7 +107,7 @@ def generate_constants_hpp(protocol_config: ProtocolConfig, type_registry: TypeR
 
 def _generate_header() -> str:
     """Generate file header."""
-    return '''/**
+    return """/**
  * ProtocolConstants.hpp - Protocol Configuration Constants
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -121,7 +128,7 @@ namespace Protocol {
 // ============================================================================
 // SYSEX FRAMING CONSTANTS
 // ============================================================================
-'''
+"""
 
 
 def _generate_sysex_constants(sysex_config: SysExConfig, uint8_type: str) -> str:
@@ -132,28 +139,40 @@ def _generate_sysex_constants(sysex_config: SysExConfig, uint8_type: str) -> str
     lines: list[str] = []
 
     # Message delimiters
-    start: int = sysex_config.get('start', 0xF0)
-    end: int = sysex_config.get('end', 0xF7)
+    start: int = sysex_config.get("start", 0xF0)
+    end: int = sysex_config.get("end", 0xF7)
     lines.append(f"constexpr {uint8_type} SYSEX_START = {start:#04x};  // SysEx start byte")
     lines.append(f"constexpr {uint8_type} SYSEX_END = {end:#04x};    // SysEx end byte")
     lines.append("")
 
     # Protocol identifiers
-    manufacturer_id: int = sysex_config.get('manufacturer_id', 0x7F)
-    device_id: int = sysex_config.get('device_id', 0x01)
-    lines.append(f"constexpr {uint8_type} MANUFACTURER_ID = {manufacturer_id:#04x};  // MIDI manufacturer ID")
-    lines.append(f"constexpr {uint8_type} DEVICE_ID = {device_id:#04x};        // Device identifier")
+    manufacturer_id: int = sysex_config.get("manufacturer_id", 0x7F)
+    device_id: int = sysex_config.get("device_id", 0x01)
+    lines.append(
+        f"constexpr {uint8_type} MANUFACTURER_ID = {manufacturer_id:#04x};  // MIDI manufacturer ID"
+    )
+    lines.append(
+        f"constexpr {uint8_type} DEVICE_ID = {device_id:#04x};        // Device identifier"
+    )
     lines.append("")
 
     # Message structure
-    min_length: int = sysex_config.get('min_message_length', 6)
-    type_offset: int = sysex_config.get('message_type_offset', 3)
-    from_host_offset: int = sysex_config.get('from_host_offset', 4)
-    payload_offset: int = sysex_config.get('payload_offset', 5)
-    lines.append(f"constexpr {uint8_type} MIN_MESSAGE_LENGTH = {min_length};  // Minimum valid SysEx message")
-    lines.append(f"constexpr {uint8_type} MESSAGE_TYPE_OFFSET = {type_offset};  // Position of MessageID byte")
-    lines.append(f"constexpr {uint8_type} FROM_HOST_OFFSET = {from_host_offset};      // Position of fromHost flag")
-    lines.append(f"constexpr {uint8_type} PAYLOAD_OFFSET = {payload_offset};      // Start of payload data")
+    min_length: int = sysex_config.get("min_message_length", 6)
+    type_offset: int = sysex_config.get("message_type_offset", 3)
+    from_host_offset: int = sysex_config.get("from_host_offset", 4)
+    payload_offset: int = sysex_config.get("payload_offset", 5)
+    lines.append(
+        f"constexpr {uint8_type} MIN_MESSAGE_LENGTH = {min_length};  // Minimum valid SysEx message"
+    )
+    lines.append(
+        f"constexpr {uint8_type} MESSAGE_TYPE_OFFSET = {type_offset};  // Position of MessageID byte"
+    )
+    lines.append(
+        f"constexpr {uint8_type} FROM_HOST_OFFSET = {from_host_offset};      // Position of fromHost flag"
+    )
+    lines.append(
+        f"constexpr {uint8_type} PAYLOAD_OFFSET = {payload_offset};      // Start of payload data"
+    )
 
     return "\n".join(lines)
 
@@ -168,22 +187,30 @@ def _generate_limits(limits_config: LimitsConfig, uint8_type: str, uint16_type: 
         "// ============================================================================",
         "// ENCODING LIMITS",
         "// ============================================================================",
-        ""
+        "",
     ]
 
     # String limits
-    string_max: int = limits_config.get('string_max_length', 16)
-    lines.append(f"constexpr {uint8_type} STRING_MAX_LENGTH = {string_max};  // Max chars per string field")
+    string_max: int = limits_config.get("string_max_length", 16)
+    lines.append(
+        f"constexpr {uint8_type} STRING_MAX_LENGTH = {string_max};  // Max chars per string field"
+    )
 
     # Array limits
-    array_max: int = limits_config.get('array_max_items', 8)
-    lines.append(f"constexpr {uint8_type} ARRAY_MAX_ITEMS = {array_max};      // Max items per array field")
+    array_max: int = limits_config.get("array_max_items", 8)
+    lines.append(
+        f"constexpr {uint8_type} ARRAY_MAX_ITEMS = {array_max};      // Max items per array field"
+    )
 
     # Payload limits
-    max_payload: int = limits_config.get('max_payload_size', 256)
-    max_message: int = limits_config.get('max_message_size', 261)
-    lines.append(f"constexpr {uint16_type} MAX_PAYLOAD_SIZE = {max_payload};    // Max payload bytes")
-    lines.append(f"constexpr {uint16_type} MAX_MESSAGE_SIZE = {max_message};    // Max total message bytes")
+    max_payload: int = limits_config.get("max_payload_size", 256)
+    max_message: int = limits_config.get("max_message_size", 261)
+    lines.append(
+        f"constexpr {uint16_type} MAX_PAYLOAD_SIZE = {max_payload};    // Max payload bytes"
+    )
+    lines.append(
+        f"constexpr {uint16_type} MAX_MESSAGE_SIZE = {max_message};    // Max total message bytes"
+    )
 
     return "\n".join(lines)
 
@@ -194,8 +221,8 @@ def _generate_role_constants(roles_config: RolesConfig) -> str:
         # Default: C++ is controller
         is_host: bool = False
     else:
-        cpp_role: str = roles_config.get('cpp', 'controller')
-        is_host: bool = (cpp_role == 'host')
+        cpp_role: str = roles_config.get("cpp", "controller")
+        is_host: bool = cpp_role == "host"
 
     lines: list[str] = [
         "",
@@ -203,7 +230,7 @@ def _generate_role_constants(roles_config: RolesConfig) -> str:
         "// ROLE CONFIGURATION",
         "// ============================================================================",
         "",
-        f"constexpr bool IS_HOST = {'true' if is_host else 'false'};  // This code's role in the protocol"
+        f"constexpr bool IS_HOST = {'true' if is_host else 'false'};  // This code's role in the protocol",
     ]
 
     return "\n".join(lines)
@@ -211,7 +238,7 @@ def _generate_role_constants(roles_config: RolesConfig) -> str:
 
 def _generate_footer() -> str:
     """Generate namespace closing."""
-    return '''
+    return """
 
 }  // namespace Protocol
-'''
+"""

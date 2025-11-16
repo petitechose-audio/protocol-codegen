@@ -8,18 +8,19 @@ Simplified version - all messages are sequential, no flow-based grouping.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.message import Message
+    from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
+    from protocol_codegen.core.message import Message
 
 
 def generate_messageid_hpp(
     messages: list[Message],
     allocations: dict[str, int],
     type_registry: TypeRegistry,
-    output_path: Path
+    output_path: Path,
 ) -> str:
     """
     Generate MessageID.hpp with sequential message IDs.
@@ -33,7 +34,7 @@ def generate_messageid_hpp(
     Returns:
         Generated C++ code as string
     """
-    uint8_cpp = type_registry.get('uint8').cpp_type
+    uint8_cpp = type_registry.get("uint8").cpp_type
 
     if uint8_cpp is None:
         raise ValueError("Missing C++ type mapping for uint8 in builtin_types.yaml")
@@ -52,7 +53,7 @@ def generate_messageid_hpp(
 
 def _generate_header(message_count: int, uint8_type: str) -> str:
     """Generate file header."""
-    return f'''/**
+    return f"""/**
  * MessageID.hpp - SysEx Message ID Enum
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -77,7 +78,7 @@ namespace Protocol {{
  * Values are auto-allocated sequentially.
  */
 enum class MessageID : {uint8_type} {{
-'''
+"""
 
 
 def _generate_enum_body(sorted_messages: list[Message], allocations: dict[str, int]) -> str:
@@ -100,18 +101,18 @@ def _generate_enum_body(sorted_messages: list[Message], allocations: dict[str, i
 
 def _generate_counts(message_count: int, uint8_type: str) -> str:
     """Generate message count constants."""
-    return f'''
+    return f"""
 }};
 
 /**
  * Total number of defined messages
  */
 constexpr {uint8_type} MESSAGE_COUNT = {message_count};
-'''
+"""
 
 
 def _generate_footer() -> str:
     """Generate file footer."""
-    return '''
+    return """
 }  // namespace Protocol
-'''
+"""

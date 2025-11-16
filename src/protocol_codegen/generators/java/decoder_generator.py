@@ -20,11 +20,13 @@ Generated Output:
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.loader import TypeRegistry, AtomicType
+    from pathlib import Path
+
+    from protocol_codegen.core.loader import AtomicType, TypeRegistry
 
 
 def generate_decoder_java(type_registry: TypeRegistry, output_path: Path) -> str:
@@ -61,7 +63,7 @@ def _generate_header(builtin_types: dict[str, AtomicType], package: str) -> str:
     """Generate file header with package and class declaration."""
     type_list = ", ".join(builtin_types.keys())
 
-    return f'''package {package};
+    return f"""package {package};
 
 /**
  * Decoder - 7-bit MIDI-safe Decoder
@@ -98,7 +100,7 @@ public final class Decoder {{
     // DECODE METHODS (7-bit MIDI-safe bytes → Type)
     // ============================================================================
     // Returns decoded value or throws IllegalArgumentException on error
-'''
+"""
 
 
 def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
@@ -109,8 +111,8 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
         java_type = atomic_type.java_type
         desc = atomic_type.description
 
-        if type_name == 'bool':
-            decoders.append(f'''
+        if type_name == "bool":
+            decoders.append(f"""
     /**
      * Decode bool (1 byte)
      * {desc}
@@ -126,10 +128,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
         }}
         return data[offset] != 0x00;
     }}
-''')
+""")
 
-        elif type_name == 'uint8':
-            decoders.append(f'''
+        elif type_name == "uint8":
+            decoders.append(f"""
     /**
      * Decode uint8 (1 byte)
      * {desc}
@@ -145,10 +147,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
         }}
         return (data[offset] & 0x7F);
     }}
-''')
+""")
 
-        elif type_name == 'int8':
-            decoders.append(f'''
+        elif type_name == "int8":
+            decoders.append(f"""
     /**
      * Decode int8 (1 byte)
      * {desc}
@@ -164,10 +166,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
         }}
         return (byte) (data[offset] & 0x7F);
     }}
-''')
+""")
 
-        elif type_name == 'uint16':
-            decoders.append(f'''
+        elif type_name == "uint16":
+            decoders.append(f"""
     /**
      * Decode uint16 (3 bytes → 2 bytes)
      * {desc}
@@ -186,10 +188,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
                 | ((data[offset + 1] & 0x7F) << 7)
                 | ((data[offset + 2] & 0x03) << 14);
     }}
-''')
+""")
 
-        elif type_name == 'int16':
-            decoders.append(f'''
+        elif type_name == "int16":
+            decoders.append(f"""
     /**
      * Decode int16 (3 bytes → 2 bytes)
      * {desc}
@@ -210,10 +212,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return (short) bits;
     }}
-''')
+""")
 
-        elif type_name == 'uint32':
-            decoders.append(f'''
+        elif type_name == "uint32":
+            decoders.append(f"""
     /**
      * Decode uint32 (5 bytes → 4 bytes)
      * {desc}
@@ -236,10 +238,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return (int) val;
     }}
-''')
+""")
 
-        elif type_name == 'int32':
-            decoders.append(f'''
+        elif type_name == "int32":
+            decoders.append(f"""
     /**
      * Decode int32 (5 bytes → 4 bytes)
      * {desc}
@@ -262,10 +264,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return (int) bits;
     }}
-''')
+""")
 
-        elif type_name == 'float32':
-            decoders.append(f'''
+        elif type_name == "float32":
+            decoders.append(f"""
     /**
      * Decode float32 (5 bytes → 4 bytes)
      * {desc}
@@ -288,10 +290,10 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return Float.intBitsToFloat((int) bits);
     }}
-''')
+""")
 
-        elif type_name == 'string':
-            decoders.append(f'''
+        elif type_name == "string":
+            decoders.append(f"""
     /**
      * Decode string (variable length)
      * {desc}
@@ -326,13 +328,13 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
 
         return sb.toString();
     }}
-''')
+""")
 
     return "\n".join(decoders)
 
 
 def _generate_footer() -> str:
     """Generate class closing."""
-    return '''
+    return """
 }  // class Decoder
-'''
+"""

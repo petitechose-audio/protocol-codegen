@@ -22,10 +22,11 @@ Generated Output:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.loader import TypeRegistry, AtomicType
+    from pathlib import Path
+
+    from protocol_codegen.core.loader import AtomicType, TypeRegistry
 
 
 def generate_encoder_hpp(type_registry: TypeRegistry, output_path: Path) -> str:
@@ -62,7 +63,7 @@ def _generate_header(builtin_types: dict[str, AtomicType]) -> str:
     """Generate file header with includes and namespace."""
     type_list = ", ".join(builtin_types.keys())
 
-    return f'''/**
+    return f"""/**
  * Encoder.hpp - 7-bit MIDI-safe Encoder
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -99,7 +100,7 @@ namespace Protocol {{
 // ============================================================================
 // ENCODE FUNCTIONS (Type → 7-bit MIDI-safe bytes)
 // ============================================================================
-'''
+"""
 
 
 def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
@@ -113,8 +114,8 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
         if cpp_type is None:
             continue
 
-        if type_name == 'bool':
-            encoders.append(f'''
+        if type_name == "bool":
+            encoders.append(f"""
 /**
  * Encode bool (1 byte: 0x00 or 0x01)
  * {desc}
@@ -122,10 +123,10 @@ def _generate_encoders(builtin_types: dict[str, AtomicType]) -> str:
 static inline void encodeBool(uint8_t*& buf, bool val) {{
     *buf++ = val ? 0x01 : 0x00;
 }}
-''')
+""")
 
-        elif type_name == 'uint8':
-            encoders.append(f'''
+        elif type_name == "uint8":
+            encoders.append(f"""
 /**
  * Encode uint8 (1 byte, no transformation needed if < 0x80)
  * {desc}
@@ -133,10 +134,10 @@ static inline void encodeBool(uint8_t*& buf, bool val) {{
 static inline void encodeUint8(uint8_t*& buf, uint8_t val) {{
     *buf++ = val & 0x7F;  // Ensure MIDI-safe
 }}
-''')
+""")
 
-        elif type_name == 'int8':
-            encoders.append(f'''
+        elif type_name == "int8":
+            encoders.append(f"""
 /**
  * Encode int8 (1 byte, signed → unsigned mapping)
  * {desc}
@@ -144,10 +145,10 @@ static inline void encodeUint8(uint8_t*& buf, uint8_t val) {{
 static inline void encodeInt8(uint8_t*& buf, int8_t val) {{
     *buf++ = static_cast<uint8_t>(val) & 0x7F;
 }}
-''')
+""")
 
-        elif type_name == 'uint16':
-            encoders.append(f'''
+        elif type_name == "uint16":
+            encoders.append(f"""
 /**
  * Encode uint16 (2 bytes → 3 bytes, 7-bit encoding)
  * {desc}
@@ -158,10 +159,10 @@ static inline void encodeUint16(uint8_t*& buf, uint16_t val) {{
     *buf++ = (val >> 7) & 0x7F;    // bits 7-13
     *buf++ = (val >> 14) & 0x03;   // bits 14-15 (only 2 bits needed)
 }}
-''')
+""")
 
-        elif type_name == 'int16':
-            encoders.append(f'''
+        elif type_name == "int16":
+            encoders.append(f"""
 /**
  * Encode int16 (2 bytes → 3 bytes, 7-bit encoding)
  * {desc}
@@ -173,10 +174,10 @@ static inline void encodeInt16(uint8_t*& buf, int16_t val) {{
     *buf++ = (bits >> 7) & 0x7F;
     *buf++ = (bits >> 14) & 0x03;
 }}
-''')
+""")
 
-        elif type_name == 'uint32':
-            encoders.append(f'''
+        elif type_name == "uint32":
+            encoders.append(f"""
 /**
  * Encode uint32 (4 bytes → 5 bytes, 7-bit encoding)
  * {desc}
@@ -189,10 +190,10 @@ static inline void encodeUint32(uint8_t*& buf, uint32_t val) {{
     *buf++ = (val >> 21) & 0x7F;   // bits 21-27
     *buf++ = (val >> 28) & 0x0F;   // bits 28-31 (only 4 bits needed)
 }}
-''')
+""")
 
-        elif type_name == 'int32':
-            encoders.append(f'''
+        elif type_name == "int32":
+            encoders.append(f"""
 /**
  * Encode int32 (4 bytes → 5 bytes, 7-bit encoding)
  * {desc}
@@ -206,10 +207,10 @@ static inline void encodeInt32(uint8_t*& buf, int32_t val) {{
     *buf++ = (bits >> 21) & 0x7F;
     *buf++ = (bits >> 28) & 0x0F;
 }}
-''')
+""")
 
-        elif type_name == 'float32':
-            encoders.append(f'''
+        elif type_name == "float32":
+            encoders.append(f"""
 /**
  * Encode float32 (4 bytes → 5 bytes, 7-bit encoding)
  * {desc}
@@ -227,10 +228,10 @@ static inline void encodeFloat32(uint8_t*& buf, float val) {{
     *buf++ = (bits >> 21) & 0x7F;   // bits 21-27
     *buf++ = (bits >> 28) & 0x0F;   // bits 28-31
 }}
-''')
+""")
 
-        elif type_name == 'string':
-            encoders.append(f'''
+        elif type_name == "string":
+            encoders.append(f"""
 /**
  * Encode string (variable length: 1 byte length + data)
  * {desc}
@@ -247,13 +248,13 @@ static inline void encodeString(uint8_t*& buf, const etl::string<MAX_SIZE>& str)
         *buf++ = static_cast<uint8_t>(str[i]) & 0x7F;  // ASCII chars are already < 0x80
     }}
 }}
-''')
+""")
 
     return "\n".join(encoders)
 
 
 def _generate_footer() -> str:
     """Generate namespace closing and file footer."""
-    return '''
+    return """
 }  // namespace Protocol
-'''
+"""

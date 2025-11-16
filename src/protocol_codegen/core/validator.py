@@ -15,10 +15,9 @@ Separation of Concerns:
 - ProtocolValidator validates messages (sysex_messages.py)
 """
 
-from typing import List
-from .message import Message
+from .field import CompositeField, FieldBase, PrimitiveField
 from .loader import TypeRegistry
-from .field import FieldBase, PrimitiveField, CompositeField
+from .message import Message
 
 
 class ProtocolValidator:
@@ -49,9 +48,9 @@ class ProtocolValidator:
             type_registry: Loaded TypeRegistry instance
         """
         self.registry = type_registry
-        self.errors: List[str] = []
+        self.errors: list[str] = []
 
-    def validate_messages(self, messages: List[Message]) -> List[str]:
+    def validate_messages(self, messages: list[Message]) -> list[str]:
         """
         Validate all messages.
 
@@ -75,17 +74,13 @@ class ProtocolValidator:
 
         # Check duplicate names
         names = [m.name for m in messages]
-        duplicates = set([n for n in names if names.count(n) > 1])
+        duplicates = {n for n in names if names.count(n) > 1}
         if duplicates:
-            self.errors.append(
-                f"Duplicate message names: {duplicates}"
-            )
+            self.errors.append(f"Duplicate message names: {duplicates}")
 
         # Check for empty messages list
         if not messages:
-            self.errors.append(
-                "No messages defined (ALL_MESSAGES is empty)"
-            )
+            self.errors.append("No messages defined (ALL_MESSAGES is empty)")
 
         # Validate each message
         for msg in messages:
@@ -115,17 +110,17 @@ class ProtocolValidator:
 
         # Check duplicate field names within message
         field_names = [f.name for f in msg.fields]
-        duplicates = set([n for n in field_names if field_names.count(n) > 1])
+        duplicates = {n for n in field_names if field_names.count(n) > 1}
         if duplicates:
-            self.errors.append(
-                f"Message '{msg.name}' has duplicate field names: {duplicates}"
-            )
+            self.errors.append(f"Message '{msg.name}' has duplicate field names: {duplicates}")
 
         # Validate each field recursively
         for field in msg.fields:
             self._validate_field(field, msg.name)
 
-    def _validate_field(self, field: FieldBase, message_name: str, depth: int = 0, max_depth: int = 3) -> None:
+    def _validate_field(
+        self, field: FieldBase, message_name: str, depth: int = 0, max_depth: int = 3
+    ) -> None:
         """
         Validate field recursively (handles both primitive and composite fields).
 
@@ -153,7 +148,7 @@ class ProtocolValidator:
             type_name_str: str = field.type_name.value
 
             # Extract base type (handle array notation if present)
-            base_type: str = type_name_str.split('[')[0]
+            base_type: str = type_name_str.split("[")[0]
 
             # Check type exists
             if not self.registry.is_atomic(base_type):
@@ -165,7 +160,9 @@ class ProtocolValidator:
         elif isinstance(field, CompositeField):
             # Validate composite field: check nested fields recursively
             nested_field_names: list[str] = [f.name for f in field.fields]
-            duplicates: set[str] = set([n for n in nested_field_names if nested_field_names.count(n) > 1])
+            duplicates: set[str] = {
+                n for n in nested_field_names if nested_field_names.count(n) > 1
+            }
             if duplicates:
                 self.errors.append(
                     f"Message '{message_name}' composite field '{field.name}' "
@@ -177,7 +174,7 @@ class ProtocolValidator:
             for nested_field in field.fields:
                 self._validate_field(nested_field, message_name, depth + 1, max_depth)
 
-    def get_errors(self) -> List[str]:
+    def get_errors(self) -> list[str]:
         """
         Get collected errors without raising.
 

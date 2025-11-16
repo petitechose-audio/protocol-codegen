@@ -12,14 +12,13 @@ Allocation Strategy:
 
 from __future__ import annotations
 
-from typing import Dict, List, Any
-from .message import Message
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .message import Message
 
 
-def allocate_message_ids(
-    messages: List[Message],
-    start_id: int = 0x00
-) -> Dict[str, int]:
+def allocate_message_ids(messages: list[Message], start_id: int = 0x00) -> dict[str, int]:
     """
     Auto-allocate SysEx IDs for messages sequentially.
 
@@ -49,7 +48,7 @@ def allocate_message_ids(
     if len(messages) > 256:
         raise ValueError(f"Too many messages: {len(messages)} (max 256)")
 
-    allocations: Dict[str, int] = {}
+    allocations: dict[str, int] = {}
 
     # Sort by name for deterministic allocation
     sorted_messages = sorted(messages, key=lambda m: m.name or "")
@@ -61,7 +60,7 @@ def allocate_message_ids(
     return allocations
 
 
-def load_ranges_from_config(protocol_config: Dict[str, Any]) -> int:
+def load_ranges_from_config(protocol_config: dict[str, Any]) -> int:
     """
     Load starting message ID from protocol_config.yaml.
 
@@ -71,5 +70,5 @@ def load_ranges_from_config(protocol_config: Dict[str, Any]) -> int:
     Returns:
         Starting message ID (defaults to 0x00 if not found)
     """
-    result: int = protocol_config.get('message_id_start', 0x00)
+    result: int = protocol_config.get("message_id_start", 0x00)
     return result

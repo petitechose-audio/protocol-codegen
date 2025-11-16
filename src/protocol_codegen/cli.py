@@ -22,47 +22,38 @@ def cli():
 
 @cli.command()
 @click.option(
-    '--method',
-    type=click.Choice(['sysex'], case_sensitive=False),
+    "--method",
+    type=click.Choice(["sysex"], case_sensitive=False),
     required=True,
-    help='Protocol method to use (sysex, osc, etc.)'
+    help="Protocol method to use (sysex, osc, etc.)",
 )
 @click.option(
-    '--messages',
-    type=click.Path(exists=True, path_type=Path),
+    "--messages",
+    type=click.Path(exists=True),
     required=True,
-    help='Path to message directory or __init__.py file'
+    help="Path to message directory or __init__.py file",
 )
 @click.option(
-    '--config',
-    type=click.Path(exists=True, path_type=Path),
+    "--config",
+    type=click.Path(exists=True),
     required=True,
-    help='Path to protocol_config.py file'
+    help="Path to protocol_config.py file",
 )
 @click.option(
-    '--plugin-paths',
-    type=click.Path(exists=True, path_type=Path),
+    "--plugin-paths",
+    type=click.Path(exists=True),
     required=True,
-    help='Path to plugin_paths.py file'
+    help="Path to plugin_paths.py file",
 )
 @click.option(
-    '--output-base',
-    type=click.Path(path_type=Path),
+    "--output-base",
+    type=click.Path(),
     required=True,
-    help='Base output directory (contains plugin_paths config)'
+    help="Base output directory (contains plugin_paths config)",
 )
-@click.option(
-    '--verbose',
-    is_flag=True,
-    help='Enable verbose output'
-)
+@click.option("--verbose", is_flag=True, help="Enable verbose output")
 def generate(
-    method: str,
-    messages: Path,
-    config: Path,
-    plugin_paths: Path,
-    output_base: Path,
-    verbose: bool
+    method: str, messages: str, config: str, plugin_paths: str, output_base: str, verbose: bool
 ):
     """
     Generate protocol code from message definitions.
@@ -76,28 +67,34 @@ def generate(
             --plugin-paths ./examples/simple-sensor-network/plugin_paths.py \\
             --output-base ./examples/simple-sensor-network
     """
+    # Convert string paths to Path objects
+    messages_path = Path(messages)
+    config_path = Path(config)
+    plugin_paths_path = Path(plugin_paths)
+    output_base_path = Path(output_base)
+
     if verbose:
         click.echo("=" * 70)
         click.echo("Protocol CodeGen v1.0.0")
         click.echo("=" * 70)
         click.echo(f"Method: {method}")
-        click.echo(f"Messages: {messages}")
-        click.echo(f"Config: {config}")
-        click.echo(f"Plugin paths: {plugin_paths}")
-        click.echo(f"Output base: {output_base}")
+        click.echo(f"Messages: {messages_path}")
+        click.echo(f"Config: {config_path}")
+        click.echo(f"Plugin paths: {plugin_paths_path}")
+        click.echo(f"Output base: {output_base_path}")
         click.echo()
 
     # Import generator based on method
-    if method.lower() == 'sysex':
+    if method.lower() == "sysex":
         from protocol_codegen.methods.sysex.generator import generate_sysex_protocol
 
         try:
             generate_sysex_protocol(
-                messages_dir=messages,
-                config_path=config,
-                plugin_paths_path=plugin_paths,
-                output_base=output_base,
-                verbose=verbose
+                messages_dir=messages_path,
+                config_path=config_path,
+                plugin_paths_path=plugin_paths_path,
+                output_base=output_base_path,
+                verbose=verbose,
             )
             if verbose:
                 click.echo()
@@ -109,6 +106,7 @@ def generate(
             click.echo(f"❌ Error during generation: {e}", err=True)
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
     else:
@@ -118,18 +116,18 @@ def generate(
 
 @cli.command()
 @click.option(
-    '--method',
-    type=click.Choice(['sysex'], case_sensitive=False),
+    "--method",
+    type=click.Choice(["sysex"], case_sensitive=False),
     required=True,
-    help='Protocol method to validate for'
+    help="Protocol method to validate for",
 )
 @click.option(
-    '--messages',
-    type=click.Path(exists=True, path_type=Path),
+    "--messages",
+    type=click.Path(exists=True),
     required=True,
-    help='Path to messages.py file'
+    help="Path to messages.py file",
 )
-def validate(method: str, messages: Path):
+def validate(method: str, messages: str):
     """
     Validate message definitions without generating code.
 
@@ -137,7 +135,9 @@ def validate(method: str, messages: Path):
 
         protocol-codegen validate --method sysex --messages ./messages.py
     """
-    click.echo(f"🔍 Validating messages: {messages}")
+    messages_path = Path(messages)
+
+    click.echo(f"🔍 Validating messages: {messages_path}")
     click.echo(f"Method: {method}")
 
     # TODO: Implement validation
@@ -145,7 +145,7 @@ def validate(method: str, messages: Path):
     sys.exit(1)
 
 
-@cli.command(name='list-methods')
+@cli.command(name="list-methods")
 def list_methods():
     """List available protocol methods."""
     click.echo("📋 Available Protocol Methods:")
@@ -156,7 +156,7 @@ def list_methods():
     click.echo()
 
 
-@cli.command(name='list-generators')
+@cli.command(name="list-generators")
 def list_generators():
     """List available code generators."""
     click.echo("📋 Available Code Generators:")
@@ -171,23 +171,21 @@ def list_generators():
 
 @cli.command()
 @click.option(
-    '--method',
-    type=click.Choice(['sysex'], case_sensitive=False),
-    default='sysex',
-    help='Protocol method for scaffolding'
+    "--method",
+    type=click.Choice(["sysex"], case_sensitive=False),
+    default="sysex",
+    help="Protocol method for scaffolding",
 )
 @click.option(
-    '--generators',
-    default='cpp,java',
-    help='Comma-separated list of generators (e.g., cpp,java)'
+    "--generators", default="cpp,java", help="Comma-separated list of generators (e.g., cpp,java)"
 )
 @click.option(
-    '--output',
-    type=click.Path(path_type=Path),
-    default=Path('./my-protocol'),
-    help='Output directory for scaffolding'
+    "--output",
+    type=click.Path(),
+    default="./my-protocol",
+    help="Output directory for scaffolding",
 )
-def init(method: str, generators: str, output: Path):
+def init(method: str, generators: str, output: str):
     """
     Initialize a new protocol project with scaffolding.
 
@@ -196,10 +194,12 @@ def init(method: str, generators: str, output: Path):
         # Create new SysEx project with C++ and Java
         protocol-codegen init --method sysex --generators cpp,java --output ./my-protocol
     """
-    click.echo(f"🏗️  Initializing new protocol project")
+    output_path = Path(output)
+
+    click.echo("🏗️  Initializing new protocol project")
     click.echo(f"Method: {method}")
     click.echo(f"Generators: {generators}")
-    click.echo(f"Output: {output}")
+    click.echo(f"Output: {output_path}")
 
     # TODO: Implement scaffolding
     click.echo("⚠️  Scaffolding not yet implemented")
@@ -211,5 +211,5 @@ def main():
     cli()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

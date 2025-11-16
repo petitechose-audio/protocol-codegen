@@ -21,7 +21,7 @@ __author__ = "petitechose.audio"
 __license__ = "MIT"
 
 # Re-export main API
-from protocol_codegen.core.field import PrimitiveField, CompositeField, Type
+from protocol_codegen.core.field import CompositeField, PrimitiveField, Type
 from protocol_codegen.core.message import Message
 
 # Type will be populated dynamically when types are loaded

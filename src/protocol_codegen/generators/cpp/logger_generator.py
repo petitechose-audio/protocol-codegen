@@ -24,17 +24,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 # Import field classes for runtime isinstance checks
-from protocol_codegen.core.field import FieldBase, PrimitiveField, CompositeField
+from protocol_codegen.core.field import CompositeField, FieldBase, PrimitiveField
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
 
 
 # ============================================================================
 # LOGGER.HPP GENERATION (utility file)
 # ============================================================================
+
 
 def generate_logger_hpp(output_path: Path) -> str:
     """
@@ -49,7 +51,7 @@ def generate_logger_hpp(output_path: Path) -> str:
     Returns:
         Generated C++ code as string
     """
-    return '''/**
+    return """/**
  * Logger.hpp - Protocol Logging Utilities
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -139,14 +141,17 @@ static inline int floatToString(char* buffer, size_t bufferSize, float value) {
 }
 
 }  // namespace Protocol
-'''
+"""
 
 
 # ============================================================================
 # TOSTRING() METHOD GENERATION (per-message)
 # ============================================================================
 
-def generate_log_method(struct_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry) -> str:
+
+def generate_log_method(
+    struct_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry
+) -> str:
     """
     Generate toString() method for a message struct.
 
@@ -192,22 +197,18 @@ def generate_log_method(struct_name: str, fields: Sequence[FieldBase], type_regi
     ]
 
     # Generate YAML header: # MessageName\nmessageName:
-    lines.append(f'        ptr += snprintf(ptr, end - ptr, "# {struct_name.replace("Message", "")}\\n{message_key}:\\n");')
+    lines.append(
+        f'        ptr += snprintf(ptr, end - ptr, "# {struct_name.replace("Message", "")}\\n{message_key}:\\n");'
+    )
     lines.append("        ")
 
     # Generate field formatting code
     for i, field in enumerate(fields):
-        is_last = (i == len(fields) - 1)
+        is_last = i == len(fields) - 1
         field_lines = _format_field_for_log(field, type_registry, indent=1, is_last=is_last)
         lines.extend(field_lines)
 
-    lines.extend([
-        "        ",
-        "        *ptr = '\\0';",
-        "        return buffer;",
-        "    }",
-        ""
-    ])
+    lines.extend(["        ", "        *ptr = '\\0';", "        return buffer;", "    }", ""])
 
     return "\n".join(lines)
 
@@ -216,11 +217,9 @@ def generate_log_method(struct_name: str, fields: Sequence[FieldBase], type_regi
 # FIELD FORMATTING (recursive)
 # ============================================================================
 
+
 def _format_field_for_log(
-    field: FieldBase,
-    type_registry: TypeRegistry,
-    indent: int,
-    is_last: bool
+    field: FieldBase, type_registry: TypeRegistry, indent: int, is_last: bool
 ) -> list[str]:
     """
     Route to appropriate formatter based on field type.
@@ -249,10 +248,7 @@ def _format_field_for_log(
 
 
 def _format_primitive_scalar(
-    field: PrimitiveField,
-    type_registry: TypeRegistry,
-    indent: int,
-    is_last: bool
+    field: PrimitiveField, type_registry: TypeRegistry, indent: int, is_last: bool
 ) -> list[str]:
     """
     Format a primitive scalar field.
@@ -269,32 +265,40 @@ def _format_primitive_scalar(
     type_name = field.type_name.value
 
     # Get format specifier based on type
-    if type_name == 'bool':
+    if type_name == "bool":
         # Boolean: true/false (no quotes)
-        return [f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %s\\n", {field_access} ? "true" : "false");']
+        return [
+            f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %s\\n", {field_access} ? "true" : "false");'
+        ]
 
-    elif type_name == 'string':
+    elif type_name == "string":
         # String: "value" (with quotes)
-        return [f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: \\"%s\\"\\n", {field_access}.c_str());']
+        return [
+            f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: \\"%s\\"\\n", {field_access}.c_str());'
+        ]
 
-    elif type_name in ('uint8', 'uint16', 'uint32'):
+    elif type_name in ("uint8", "uint16", "uint32"):
         # Unsigned integers: cast to unsigned long for %lu (portable across platforms)
-        return [f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %lu\\n", (unsigned long){field_access});']
+        return [
+            f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %lu\\n", (unsigned long){field_access});'
+        ]
 
-    elif type_name in ('int8', 'int16', 'int32'):
+    elif type_name in ("int8", "int16", "int32"):
         # Signed integers: cast to long for %ld (portable across platforms)
-        return [f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %ld\\n", (long){field_access});']
+        return [
+            f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %ld\\n", (long){field_access});'
+        ]
 
-    elif type_name == 'float32':
+    elif type_name == "float32":
         # Float: use floatToString() for 4 decimal precision
         # Create a safe variable name (no dots, brackets, etc.)
         safe_var_name = _make_safe_var_name(field.name)
         lines = [
-            f"        {{",
+            "        {",
             f"            char floatBuf_{safe_var_name}[16];",
             f"            floatToString(floatBuf_{safe_var_name}, sizeof(floatBuf_{safe_var_name}), {field_access});",
             f'            ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}: %s\\n", floatBuf_{safe_var_name});',
-            f"        }}"
+            "        }",
         ]
         return lines
 
@@ -303,10 +307,7 @@ def _format_primitive_scalar(
 
 
 def _format_primitive_array(
-    field: PrimitiveField,
-    type_registry: TypeRegistry,
-    indent: int,
-    is_last: bool
+    field: PrimitiveField, type_registry: TypeRegistry, indent: int, is_last: bool
 ) -> list[str]:
     """
     Format a primitive array field.
@@ -331,55 +332,74 @@ def _format_primitive_array(
 
     # Check if array is empty
     lines.append(f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_display}:");')
-    lines.append(f'        if ({field_access}.size() == 0) {{')
-    lines.append(f'            ptr += snprintf(ptr, end - ptr, " []\\n");')
-    lines.append(f'        }} else {{')
-    lines.append(f'            ptr += snprintf(ptr, end - ptr, "\\n");')
+    lines.append(f"        if ({field_access}.size() == 0) {{")
+    lines.append('            ptr += snprintf(ptr, end - ptr, " []\\n");')
+    lines.append("        } else {")
+    lines.append('            ptr += snprintf(ptr, end - ptr, "\\n");')
 
     # Loop over array items
-    if type_name == 'bool':
-        lines.append(f'            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{')
-        lines.append(f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %s\\n", {field_access}[{loop_var}] ? "true" : "false");')
-        lines.append(f'            }}')
+    if type_name == "bool":
+        lines.append(
+            f"            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{"
+        )
+        lines.append(
+            f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %s\\n", {field_access}[{loop_var}] ? "true" : "false");'
+        )
+        lines.append("            }")
 
-    elif type_name == 'string':
-        lines.append(f'            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{')
-        lines.append(f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- \\"%s\\"\\n", {field_access}[{loop_var}].c_str());')
-        lines.append(f'            }}')
+    elif type_name == "string":
+        lines.append(
+            f"            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{"
+        )
+        lines.append(
+            f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- \\"%s\\"\\n", {field_access}[{loop_var}].c_str());'
+        )
+        lines.append("            }")
 
-    elif type_name in ('uint8', 'uint16', 'uint32'):
-        lines.append(f'            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{')
-        lines.append(f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %lu\\n", (unsigned long){field_access}[{loop_var}]);')
-        lines.append(f'            }}')
+    elif type_name in ("uint8", "uint16", "uint32"):
+        lines.append(
+            f"            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{"
+        )
+        lines.append(
+            f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %lu\\n", (unsigned long){field_access}[{loop_var}]);'
+        )
+        lines.append("            }")
 
-    elif type_name in ('int8', 'int16', 'int32'):
-        lines.append(f'            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{')
-        lines.append(f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %ld\\n", (long){field_access}[{loop_var}]);')
-        lines.append(f'            }}')
+    elif type_name in ("int8", "int16", "int32"):
+        lines.append(
+            f"            for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{"
+        )
+        lines.append(
+            f'                ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %ld\\n", (long){field_access}[{loop_var}]);'
+        )
+        lines.append("            }")
 
-    elif type_name == 'float32':
+    elif type_name == "float32":
         safe_var_name = _make_safe_var_name(field.name)
-        lines.append(f'            {{')
-        lines.append(f'                char floatBuf_{safe_var_name}[16];')
-        lines.append(f'                for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{')
-        lines.append(f'                    floatToString(floatBuf_{safe_var_name}, sizeof(floatBuf_{safe_var_name}), {field_access}[{loop_var}]);')
-        lines.append(f'                    ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %s\\n", floatBuf_{safe_var_name});')
-        lines.append(f'                }}')
-        lines.append(f'            }}')
+        lines.append("            {")
+        lines.append(f"                char floatBuf_{safe_var_name}[16];")
+        lines.append(
+            f"                for (size_t {loop_var} = 0; {loop_var} < {field_access}.size(); ++{loop_var}) {{"
+        )
+        lines.append(
+            f"                    floatToString(floatBuf_{safe_var_name}, sizeof(floatBuf_{safe_var_name}), {field_access}[{loop_var}]);"
+        )
+        lines.append(
+            f'                    ptr += snprintf(ptr, end - ptr, "{next_indent_str}- %s\\n", floatBuf_{safe_var_name});'
+        )
+        lines.append("                }")
+        lines.append("            }")
 
     else:
         raise ValueError(f"Unknown primitive type: {type_name}")
 
-    lines.append(f'        }}')
+    lines.append("        }")
 
     return lines
 
 
 def _format_composite_scalar(
-    field: CompositeField,
-    type_registry: TypeRegistry,
-    indent: int,
-    is_last: bool
+    field: CompositeField, type_registry: TypeRegistry, indent: int, is_last: bool
 ) -> list[str]:
     """
     Format a single composite (struct) field.
@@ -397,20 +417,19 @@ def _format_composite_scalar(
 
     # Format nested fields
     for i, nested_field in enumerate(field.fields):
-        is_last_nested = (i == len(field.fields) - 1)
+        is_last_nested = i == len(field.fields) - 1
         # Access nested field via field_name.nested_field_name
         nested_field_copy = _create_prefixed_field(nested_field, field_name)
-        nested_lines = _format_field_for_log(nested_field_copy, type_registry, indent + 1, is_last_nested)
+        nested_lines = _format_field_for_log(
+            nested_field_copy, type_registry, indent + 1, is_last_nested
+        )
         lines.extend(nested_lines)
 
     return lines
 
 
 def _format_composite_array(
-    field: CompositeField,
-    type_registry: TypeRegistry,
-    indent: int,
-    is_last: bool
+    field: CompositeField, type_registry: TypeRegistry, indent: int, is_last: bool
 ) -> list[str]:
     """
     Format an array of composite (struct) fields.
@@ -431,12 +450,12 @@ def _format_composite_array(
     lines.append(f'        ptr += snprintf(ptr, end - ptr, "{indent_str}{field_name}:\\n");')
 
     # Loop over array items
-    lines.append(f'        for (size_t i = 0; i < {field_name}.size(); ++i) {{')
+    lines.append(f"        for (size_t i = 0; i < {field_name}.size(); ++i) {{")
 
     # Format each nested field with inline style for first field
     for j, nested_field in enumerate(field.fields):
-        is_first = (j == 0)
-        is_last_nested = (j == len(field.fields) - 1)
+        is_first = j == 0
+        is_last_nested = j == len(field.fields) - 1
 
         # Access via field_name[i].nested_field_name
         nested_field_copy = _create_array_indexed_field(nested_field, field_name)
@@ -446,19 +465,18 @@ def _format_composite_array(
             nested_lines = _format_field_for_log_inline(nested_field_copy, indent + 1)
         else:
             # Subsequent fields: normal indentation (indent + 2)
-            nested_lines = _format_field_for_log(nested_field_copy, type_registry, indent + 2, is_last_nested)
+            nested_lines = _format_field_for_log(
+                nested_field_copy, type_registry, indent + 2, is_last_nested
+            )
 
         lines.extend(nested_lines)
 
-    lines.append(f'        }}')
+    lines.append("        }")
 
     return lines
 
 
-def _format_field_for_log_inline(
-    field: FieldBase,
-    indent: int
-) -> list[str]:
+def _format_field_for_log_inline(field: FieldBase, indent: int) -> list[str]:
     """
     Format first field of array item with "- " prefix (inline style).
 
@@ -481,26 +499,34 @@ def _format_field_for_log_inline(
     type_name = field.type_name.value
 
     # Get format specifier based on type
-    if type_name == 'bool':
-        return [f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %s\\n", {access_path} ? "true" : "false");']
+    if type_name == "bool":
+        return [
+            f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %s\\n", {access_path} ? "true" : "false");'
+        ]
 
-    elif type_name == 'string':
-        return [f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: \\"%s\\"\\n", {access_path}.c_str());']
+    elif type_name == "string":
+        return [
+            f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: \\"%s\\"\\n", {access_path}.c_str());'
+        ]
 
-    elif type_name in ('uint8', 'uint16', 'uint32'):
-        return [f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %lu\\n", (unsigned long){access_path});']
+    elif type_name in ("uint8", "uint16", "uint32"):
+        return [
+            f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %lu\\n", (unsigned long){access_path});'
+        ]
 
-    elif type_name in ('int8', 'int16', 'int32'):
-        return [f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %ld\\n", (long){access_path});']
+    elif type_name in ("int8", "int16", "int32"):
+        return [
+            f'            ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %ld\\n", (long){access_path});'
+        ]
 
-    elif type_name == 'float32':
+    elif type_name == "float32":
         safe_var_name = _make_safe_var_name(field.name)
         lines = [
-            f"            {{",
+            "            {",
             f"                char floatBuf_{safe_var_name}[16];",
             f"                floatToString(floatBuf_{safe_var_name}, sizeof(floatBuf_{safe_var_name}), {access_path});",
             f'                ptr += snprintf(ptr, end - ptr, "{indent_str}- {display_name}: %s\\n", floatBuf_{safe_var_name});',
-            f"            }}"
+            "            }",
         ]
         return lines
 
@@ -511,6 +537,7 @@ def _format_field_for_log_inline(
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
 
 def _get_indent_string(indent_level: int) -> str:
     """
@@ -535,7 +562,7 @@ def _get_display_name(field_access: str) -> str:
         "macros[i].parameterIndex" → "parameterIndex"
     """
     # Split by both '.' and '[' to get last component
-    parts = field_access.replace('[', '.').replace(']', '').split('.')
+    parts = field_access.replace("[", ".").replace("]", "").split(".")
     return parts[-1]
 
 
@@ -550,7 +577,7 @@ def _make_safe_var_name(field_access: str) -> str:
         "pageInfo.devicePageIndex" → "pageInfo_devicePageIndex"
         "macros[i].parameterValue" → "macros_i_parameterValue"
     """
-    safe = field_access.replace('.', '_').replace('[', '_').replace(']', '')
+    safe = field_access.replace(".", "_").replace("[", "_").replace("]", "")
     return safe
 
 
@@ -569,14 +596,14 @@ def _get_next_loop_var(field_access: str) -> str:
         "foo[i].bar[j].items" → "k"
     """
     # Count how many loop indices already exist in the path
-    depth = field_access.count('[')
+    depth = field_access.count("[")
 
-    loop_vars = ['i', 'j', 'k', 'l', 'm', 'n']
+    loop_vars = ["i", "j", "k", "l", "m", "n"]
     if depth < len(loop_vars):
         return loop_vars[depth]
     else:
         # Fallback for deeply nested loops (unlikely)
-        return f'idx{depth}'
+        return f"idx{depth}"
 
 
 def _to_camel_case(pascal_name: str) -> str:
@@ -604,17 +631,11 @@ def _create_prefixed_field(field: FieldBase, prefix: str) -> FieldBase:
     if field.is_primitive():
         assert isinstance(field, PrimitiveField)
         return PrimitiveField(
-            name=f"{prefix}.{field.name}",
-            type_name=field.type_name,
-            array=field.array
+            name=f"{prefix}.{field.name}", type_name=field.type_name, array=field.array
         )
     else:
         assert isinstance(field, CompositeField)
-        return CompositeField(
-            name=f"{prefix}.{field.name}",
-            fields=field.fields,
-            array=field.array
-        )
+        return CompositeField(name=f"{prefix}.{field.name}", fields=field.fields, array=field.array)
 
 
 def _create_array_indexed_field(field: FieldBase, array_name: str) -> FieldBase:
@@ -629,14 +650,10 @@ def _create_array_indexed_field(field: FieldBase, array_name: str) -> FieldBase:
     if field.is_primitive():
         assert isinstance(field, PrimitiveField)
         return PrimitiveField(
-            name=f"{array_name}[i].{field.name}",
-            type_name=field.type_name,
-            array=field.array
+            name=f"{array_name}[i].{field.name}", type_name=field.type_name, array=field.array
         )
     else:
         assert isinstance(field, CompositeField)
         return CompositeField(
-            name=f"{array_name}[i].{field.name}",
-            fields=field.fields,
-            array=field.array
+            name=f"{array_name}[i].{field.name}", fields=field.fields, array=field.array
         )

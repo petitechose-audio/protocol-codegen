@@ -23,21 +23,28 @@ Generated Output:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 # Import field classes for runtime isinstance checks
-from protocol_codegen.core.field import FieldBase, PrimitiveField, CompositeField
+from protocol_codegen.core.field import CompositeField, FieldBase, PrimitiveField
 
 # Import logger generator
 from protocol_codegen.generators.java.logger_generator import generate_log_method
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from protocol_codegen.core.message import Message
+    from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
+    from protocol_codegen.core.message import Message
 
 
-def generate_struct_java(message: Message, message_id: int, type_registry: TypeRegistry, output_path: Path, string_max_length: int) -> str:
+def generate_struct_java(
+    message: Message,
+    message_id: int,
+    type_registry: TypeRegistry,
+    output_path: Path,
+    string_max_length: int,
+) -> str:
     """
     Generate Java message class for a message.
 
@@ -66,7 +73,15 @@ def generate_struct_java(message: Message, message_id: int, type_registry: TypeR
     needs_arraylist = _needs_list_import(fields)
     needs_constants = _needs_constants_import(fields, type_registry)
 
-    header = _generate_header(class_name, description, needs_encoder, needs_decoder, needs_list, needs_arraylist, needs_constants)
+    header = _generate_header(
+        class_name,
+        description,
+        needs_encoder,
+        needs_decoder,
+        needs_list,
+        needs_arraylist,
+        needs_constants,
+    )
     message_id_constant = _generate_message_id_constant(message.name)
     inner_classes = _generate_inner_classes(fields, type_registry)
     field_declarations = _generate_field_declarations(fields, type_registry)
@@ -81,8 +96,15 @@ def generate_struct_java(message: Message, message_id: int, type_registry: TypeR
     return full_code
 
 
-def _generate_header(class_name: str, description: str, needs_encoder: bool, needs_decoder: bool,
-                     needs_list: bool, needs_arraylist: bool, needs_constants: bool) -> str:
+def _generate_header(
+    class_name: str,
+    description: str,
+    needs_encoder: bool,
+    needs_decoder: bool,
+    needs_list: bool,
+    needs_arraylist: bool,
+    needs_constants: bool,
+) -> str:
     """Generate file header with package and class declaration, importing only what's needed."""
     imports = ["import com.midi_studio.protocol.MessageID;"]
 
@@ -99,7 +121,7 @@ def _generate_header(class_name: str, description: str, needs_encoder: bool, nee
 
     imports_str = "\n".join(imports)
 
-    return f'''package com.midi_studio.protocol.struct;
+    return f"""package com.midi_studio.protocol.struct;
 
 {imports_str}
 
@@ -115,25 +137,29 @@ def _generate_header(class_name: str, description: str, needs_encoder: bool, nee
  * All encoding is 7-bit MIDI-safe.
  */
 public final class {class_name} {{
-'''
+"""
 
 
 def _generate_message_id_constant(message_name: str) -> str:
     """Generate MESSAGE_ID constant for auto-detection in protocol.send()."""
-    return f'''
+    return f"""
     // ============================================================================
     // Auto-detected MessageID for protocol.send()
     // ============================================================================
 
     public static final MessageID MESSAGE_ID = MessageID.{message_name};
-'''
+"""
 
 
 def _generate_field_declarations(fields: Sequence[FieldBase], type_registry: TypeRegistry) -> str:
     """Generate private final field declarations (supports composites)."""
-    lines: list[str] = ["    // ============================================================================"]
+    lines: list[str] = [
+        "    // ============================================================================"
+    ]
     lines.append("    // Fields")
-    lines.append("    // ============================================================================")
+    lines.append(
+        "    // ============================================================================"
+    )
     lines.append("")
 
     # Add fromHost field (injected by DecoderRegistry, ignored during encode)
@@ -161,11 +187,17 @@ def _generate_field_declarations(fields: Sequence[FieldBase], type_registry: Typ
     return "\n".join(lines)
 
 
-def _generate_constructor(class_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry) -> str:
+def _generate_constructor(
+    class_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry
+) -> str:
     """Generate public constructor."""
-    lines: list[str] = ["    // ============================================================================"]
+    lines: list[str] = [
+        "    // ============================================================================"
+    ]
     lines.append("    // Constructor")
-    lines.append("    // ============================================================================")
+    lines.append(
+        "    // ============================================================================"
+    )
     lines.append("")
     lines.append("    /**")
     lines.append(f"     * Construct a new {class_name}")
@@ -210,9 +242,13 @@ def _generate_constructor(class_name: str, fields: Sequence[FieldBase], type_reg
 
 def _generate_getters(fields: Sequence[FieldBase], type_registry: TypeRegistry) -> str:
     """Generate public getters."""
-    lines: list[str] = ["    // ============================================================================"]
+    lines: list[str] = [
+        "    // ============================================================================"
+    ]
     lines.append("    // Getters")
-    lines.append("    // ============================================================================")
+    lines.append(
+        "    // ============================================================================"
+    )
     lines.append("")
 
     for field in fields:
@@ -228,30 +264,39 @@ def _generate_getters(fields: Sequence[FieldBase], type_registry: TypeRegistry) 
 
         getter_name = _to_getter_name(field.name)
 
-        lines.append(f"    /**")
+        lines.append("    /**")
         lines.append(f"     * Get the {field.name} value")
-        lines.append(f"     *")
+        lines.append("     *")
         lines.append(f"     * @return {field.name}")
-        lines.append(f"     */")
+        lines.append("     */")
         lines.append(f"    public {java_type} {getter_name}() {{")
         lines.append(f"        return {field.name};")
-        lines.append(f"    }}")
+        lines.append("    }")
         lines.append("")
 
     return "\n".join(lines)
 
 
-def _generate_encode_method(class_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> str:
+def _generate_encode_method(
+    class_name: str,
+    fields: Sequence[FieldBase],
+    type_registry: TypeRegistry,
+    string_max_length: int,
+) -> str:
     """Generate encode() method calling Encoder."""
     max_size = _calculate_max_payload_size(fields, type_registry, string_max_length)
 
-    lines: list[str] = ["    // ============================================================================"]
+    lines: list[str] = [
+        "    // ============================================================================"
+    ]
     lines.append("    // Encoding")
-    lines.append("    // ============================================================================")
+    lines.append(
+        "    // ============================================================================"
+    )
     lines.append("")
-    lines.append(f"    /**")
-    lines.append(f"     * Maximum payload size in bytes (7-bit encoded)")
-    lines.append(f"     */")
+    lines.append("    /**")
+    lines.append("     * Maximum payload size in bytes (7-bit encoded)")
+    lines.append("     */")
     lines.append(f"    public static final int MAX_PAYLOAD_SIZE = {max_size};")
     lines.append("")
     lines.append("    /**")
@@ -274,16 +319,20 @@ def _generate_encode_method(class_name: str, fields: Sequence[FieldBase], type_r
             field_type_name = field.type_name.value
             if field.is_array():
                 # Primitive array (e.g., List<String>)
-                lines.append(f"        byte[] {field.name}_count = Encoder.encodeUint8({field.name}.size());")
+                lines.append(
+                    f"        byte[] {field.name}_count = Encoder.encodeUint8({field.name}.size());"
+                )
                 lines.append(f"        System.arraycopy({field.name}_count, 0, buffer, offset, 1);")
-                lines.append(f"        offset += 1;")
-                lines.append(f"")
-                lines.append(f"        for ({_get_java_type(field_type_name, type_registry)} item : {field.name}) {{")
+                lines.append("        offset += 1;")
+                lines.append("")
+                lines.append(
+                    f"        for ({_get_java_type(field_type_name, type_registry)} item : {field.name}) {{"
+                )
                 encoder_call = _get_encoder_call("item", field_type_name, type_registry)
-                for line in encoder_call.split('\n'):
+                for line in encoder_call.split("\n"):
                     lines.append(f"    {line}")
-                lines.append(f"        }}")
-                lines.append(f"")
+                lines.append("        }")
+                lines.append("")
             else:
                 # Scalar primitive
                 encoder_call = _get_encoder_call(field.name, field_type_name, type_registry)
@@ -292,10 +341,12 @@ def _generate_encode_method(class_name: str, fields: Sequence[FieldBase], type_r
             assert isinstance(field, CompositeField)
             if field.array:
                 # Encode array count
-                lines.append(f"        byte[] {field.name}_count = Encoder.encodeUint8({field.name}.size());")
+                lines.append(
+                    f"        byte[] {field.name}_count = Encoder.encodeUint8({field.name}.size());"
+                )
                 lines.append(f"        System.arraycopy({field.name}_count, 0, buffer, offset, 1);")
-                lines.append(f"        offset += 1;")
-                lines.append(f"")
+                lines.append("        offset += 1;")
+                lines.append("")
                 # Encode each item
                 class_name = _field_to_pascal_case(field.name)
                 lines.append(f"        for ({class_name} item : {field.name}) {{")
@@ -306,29 +357,43 @@ def _generate_encode_method(class_name: str, fields: Sequence[FieldBase], type_r
                         if nested_field.is_array():
                             # Nested array of primitives - encode count for dynamic arrays
                             java_type = _get_java_type(nested_field.type_name.value, type_registry)
-                            lines.append(f"            byte[] count_{nested_field.name} = Encoder.encodeUint8((byte) item.{getter_name}().length);")
-                            lines.append(f"            System.arraycopy(count_{nested_field.name}, 0, buffer, offset, 1);")
-                            lines.append(f"            offset += 1;")
-                            lines.append(f"            for ({java_type} type : item.{getter_name}()) {{")
-                            encoder_call = _get_encoder_call("type", nested_field.type_name.value, type_registry)
+                            lines.append(
+                                f"            byte[] count_{nested_field.name} = Encoder.encodeUint8((byte) item.{getter_name}().length);"
+                            )
+                            lines.append(
+                                f"            System.arraycopy(count_{nested_field.name}, 0, buffer, offset, 1);"
+                            )
+                            lines.append("            offset += 1;")
+                            lines.append(
+                                f"            for ({java_type} type : item.{getter_name}()) {{"
+                            )
+                            encoder_call = _get_encoder_call(
+                                "type", nested_field.type_name.value, type_registry
+                            )
                             # Indent by 16 spaces (4 levels)
-                            for line in encoder_call.split('\n'):
+                            for line in encoder_call.split("\n"):
                                 lines.append(f"        {line}")
-                            lines.append(f"            }}")
+                            lines.append("            }")
                         else:
-                            encoder_call = _get_encoder_call(f"item.{getter_name}()", nested_field.type_name.value, type_registry)
+                            encoder_call = _get_encoder_call(
+                                f"item.{getter_name}()", nested_field.type_name.value, type_registry
+                            )
                             # Indent by 12 spaces (3 levels)
-                            for line in encoder_call.split('\n'):
+                            for line in encoder_call.split("\n"):
                                 lines.append(f"    {line}")
-                lines.append(f"        }}")
-                lines.append(f"")
+                lines.append("        }")
+                lines.append("")
             else:
                 # Single composite - encode nested fields directly
                 for nested_field in field.fields:
                     if nested_field.is_primitive():
                         assert isinstance(nested_field, PrimitiveField)
                         getter_name = _to_getter_name(nested_field.name)
-                        encoder_call = _get_encoder_call(f"{field.name}.{getter_name}()", nested_field.type_name.value, type_registry)
+                        encoder_call = _get_encoder_call(
+                            f"{field.name}.{getter_name}()",
+                            nested_field.type_name.value,
+                            type_registry,
+                        )
                         lines.append(f"        {encoder_call}")
 
     lines.append("")
@@ -339,13 +404,22 @@ def _generate_encode_method(class_name: str, fields: Sequence[FieldBase], type_r
     return "\n".join(lines)
 
 
-def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> str:
+def _generate_decode_method(
+    class_name: str,
+    fields: Sequence[FieldBase],
+    type_registry: TypeRegistry,
+    string_max_length: int,
+) -> str:
     """Generate static decode() factory method."""
     min_size = _calculate_min_payload_size(fields, type_registry, string_max_length)
 
-    lines: list[str] = ["    // ============================================================================"]
+    lines: list[str] = [
+        "    // ============================================================================"
+    ]
     lines.append("    // Decoding")
-    lines.append("    // ============================================================================")
+    lines.append(
+        "    // ============================================================================"
+    )
     lines.append("")
     lines.append("    /**")
     lines.append("     * Minimum payload size in bytes (with empty strings)")
@@ -360,8 +434,10 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
     lines.append("     * @throws IllegalArgumentException if data is invalid or insufficient")
     lines.append("     */")
     lines.append(f"    public static {class_name} decode(byte[] data) {{")
-    lines.append(f"        if (data.length < MIN_PAYLOAD_SIZE) {{")
-    lines.append(f'            throw new IllegalArgumentException("Insufficient data for {class_name} decode");')
+    lines.append("        if (data.length < MIN_PAYLOAD_SIZE) {")
+    lines.append(
+        f'            throw new IllegalArgumentException("Insufficient data for {class_name} decode");'
+    )
     lines.append("        }")
     lines.append("")
 
@@ -380,20 +456,24 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
             if field.is_array():
                 # Primitive array (e.g., List<String>)
                 lines.append(f"        int count_{field.name} = Decoder.decodeUint8(data, offset);")
-                lines.append(f"        offset += 1;")
-                lines.append(f"")
+                lines.append("        offset += 1;")
+                lines.append("")
                 lines.append(f"        List<{java_type}> {field.name}_list = new ArrayList<>();")
                 lines.append(f"        for (int i = 0; i < count_{field.name}; i++) {{")
-                decoder_call = _get_decoder_call(f"item_{field.name}", field_type_name, java_type, type_registry)
-                for line in decoder_call.split('\n'):
+                decoder_call = _get_decoder_call(
+                    f"item_{field.name}", field_type_name, java_type, type_registry
+                )
+                for line in decoder_call.split("\n"):
                     lines.append(f"    {line}")
                 lines.append(f"            {field.name}_list.add(item_{field.name});")
-                lines.append(f"        }}")
-                lines.append(f"")
+                lines.append("        }")
+                lines.append("")
                 field_vars.append(f"{field.name}_list")
             else:
                 # Scalar primitive
-                decoder_call = _get_decoder_call(field.name, field_type_name, java_type, type_registry)
+                decoder_call = _get_decoder_call(
+                    field.name, field_type_name, java_type, type_registry
+                )
                 lines.append(f"        {decoder_call}")
                 field_vars.append(field.name)
         else:  # Composite
@@ -401,10 +481,12 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
             if field.array:
                 # Decode array count
                 lines.append(f"        int count_{field.name} = Decoder.decodeUint8(data, offset);")
-                lines.append(f"        offset += 1;")
-                lines.append(f"")
+                lines.append("        offset += 1;")
+                lines.append("")
                 # Decode items
-                lines.append(f"        List<{_field_to_pascal_case(field.name)}> {field.name}_list = new ArrayList<>();")
+                lines.append(
+                    f"        List<{_field_to_pascal_case(field.name)}> {field.name}_list = new ArrayList<>();"
+                )
                 lines.append(f"        for (int i = 0; i < count_{field.name}; i++) {{")
                 # Decode each nested field
                 for nested_field in field.fields:
@@ -413,19 +495,37 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
                         java_type = _get_java_type(nested_field.type_name.value, type_registry)
                         if nested_field.is_array():
                             # Nested array of primitives - decode count for dynamic arrays
-                            lines.append(f"            byte count_{nested_field.name} = (byte) Decoder.decodeUint8(data, offset);")
-                            lines.append(f"            offset += 1;")
-                            lines.append(f"            {java_type}[] item_{nested_field.name} = new {java_type}[count_{nested_field.name}];")
-                            lines.append(f"            for (int j = 0; j < count_{nested_field.name} && j < {nested_field.array}; j++) {{")
-                            decoder_call = _get_decoder_call(f"item_{nested_field.name}_j", nested_field.type_name.value, java_type, type_registry)
+                            lines.append(
+                                f"            byte count_{nested_field.name} = (byte) Decoder.decodeUint8(data, offset);"
+                            )
+                            lines.append("            offset += 1;")
+                            lines.append(
+                                f"            {java_type}[] item_{nested_field.name} = new {java_type}[count_{nested_field.name}];"
+                            )
+                            lines.append(
+                                f"            for (int j = 0; j < count_{nested_field.name} && j < {nested_field.array}; j++) {{"
+                            )
+                            decoder_call = _get_decoder_call(
+                                f"item_{nested_field.name}_j",
+                                nested_field.type_name.value,
+                                java_type,
+                                type_registry,
+                            )
                             # Indent by 16 spaces (4 levels)
-                            for line in decoder_call.split('\n'):
+                            for line in decoder_call.split("\n"):
                                 lines.append(f"        {line}")
-                            lines.append(f"                item_{nested_field.name}[j] = item_{nested_field.name}_j;")
-                            lines.append(f"            }}")
+                            lines.append(
+                                f"                item_{nested_field.name}[j] = item_{nested_field.name}_j;"
+                            )
+                            lines.append("            }")
                         else:
-                            decoder_call = _get_decoder_call(f"item_{nested_field.name}", nested_field.type_name.value, java_type, type_registry)
-                            for line in decoder_call.split('\n'):
+                            decoder_call = _get_decoder_call(
+                                f"item_{nested_field.name}",
+                                nested_field.type_name.value,
+                                java_type,
+                                type_registry,
+                            )
+                            for line in decoder_call.split("\n"):
                                 lines.append(f"    {line}")
                 # Construct item
                 item_params: list[str] = []
@@ -433,9 +533,11 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
                     if nested_field.is_primitive():
                         item_params.append(f"item_{nested_field.name}")
                 item_params_str = ", ".join(item_params)
-                lines.append(f"            {field.name}_list.add(new {_field_to_pascal_case(field.name)}({item_params_str}));")
-                lines.append(f"        }}")
-                lines.append(f"")
+                lines.append(
+                    f"            {field.name}_list.add(new {_field_to_pascal_case(field.name)}({item_params_str}));"
+                )
+                lines.append("        }")
+                lines.append("")
                 field_vars.append(f"{field.name}_list")
             else:
                 # Single composite - decode nested fields
@@ -443,7 +545,12 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
                     if nested_field.is_primitive():
                         assert isinstance(nested_field, PrimitiveField)
                         java_type = _get_java_type(nested_field.type_name.value, type_registry)
-                        decoder_call = _get_decoder_call(f"{field.name}_{nested_field.name}", nested_field.type_name.value, java_type, type_registry)
+                        decoder_call = _get_decoder_call(
+                            f"{field.name}_{nested_field.name}",
+                            nested_field.type_name.value,
+                            java_type,
+                            type_registry,
+                        )
                         lines.append(f"        {decoder_call}")
                 # Construct composite
                 composite_params: list[str] = []
@@ -451,8 +558,10 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
                     if nested_field.is_primitive():
                         composite_params.append(f"{field.name}_{nested_field.name}")
                 composite_params_str = ", ".join(composite_params)
-                lines.append(f"        {_field_to_pascal_case(field.name)} {field.name} = new {_field_to_pascal_case(field.name)}({composite_params_str});")
-                lines.append(f"")
+                lines.append(
+                    f"        {_field_to_pascal_case(field.name)} {field.name} = new {_field_to_pascal_case(field.name)}({composite_params_str});"
+                )
+                lines.append("")
                 field_vars.append(field.name)
 
     # Construct and return instance
@@ -467,7 +576,7 @@ def _generate_decode_method(class_name: str, fields: Sequence[FieldBase], type_r
 
 def _generate_footer() -> str:
     """Generate class closing."""
-    return '}  // class Message\n'
+    return "}  // class Message\n"
 
 
 def _get_java_type(field_type: str, type_registry: TypeRegistry) -> str:
@@ -487,9 +596,9 @@ def _get_java_type(field_type: str, type_registry: TypeRegistry) -> str:
         Java type string
     """
     # Check for array notation
-    if '[' in field_type:
-        base_type, array_size = field_type.split('[')
-        array_size = array_size.rstrip(']')
+    if "[" in field_type:
+        base_type, array_size = field_type.split("[")
+        array_size = array_size.rstrip("]")
         java_base = _get_java_type(base_type, type_registry)
         return f"{java_base}[]"
 
@@ -518,20 +627,20 @@ def _sanitize_var_name(field_expr: str) -> str:
         deviceName → deviceName
     """
     # Remove parentheses
-    name: str = field_expr.replace('()', '')
+    name: str = field_expr.replace("()", "")
     # Replace dot with underscore
-    name = name.replace('.', '_')
+    name = name.replace(".", "_")
     # Remove 'get' prefix after dot if present
-    if '_get' in name:
-        parts: list[str] = name.split('_')
+    if "_get" in name:
+        parts: list[str] = name.split("_")
         result: list[str] = []
         for part in parts:
-            if part.startswith('get') and len(part) > 3:
+            if part.startswith("get") and len(part) > 3:
                 # Remove 'get' and lowercase first letter
                 result.append(part[3].lower() + part[4:])
             else:
                 result.append(part)
-        name = '_'.join(result)
+        name = "_".join(result)
     return name
 
 
@@ -543,7 +652,7 @@ def _get_encoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         Java code lines calling appropriate Encoder method
     """
     # Extract base type (handle arrays)
-    base_type = field_type.split('[')[0]
+    base_type = field_type.split("[")[0]
 
     if not type_registry.is_atomic(base_type):
         raise ValueError(f"Unknown type: {base_type}")
@@ -557,7 +666,7 @@ def _get_encoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         # Call Encoder.encodeXXX()
         encoder_name = f"encode{_capitalize_first(base_type)}"
 
-        if base_type == 'string':
+        if base_type == "string":
             # String needs max length parameter (using ProtocolConstants.STRING_MAX_LENGTH from config)
             return f"byte[] {var_name}_encoded = Encoder.{encoder_name}({field_name}, ProtocolConstants.STRING_MAX_LENGTH);\n        System.arraycopy({var_name}_encoded, 0, buffer, offset, {var_name}_encoded.length);\n        offset += {var_name}_encoded.length;"
         else:
@@ -568,14 +677,16 @@ def _get_encoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         return f"byte[] {var_name}_encoded = {field_name}.encode();\n        System.arraycopy({var_name}_encoded, 0, buffer, offset, {var_name}_encoded.length);\n        offset += {var_name}_encoded.length;"
 
 
-def _get_decoder_call(field_name: str, field_type: str, java_type: str, type_registry: TypeRegistry) -> str:
+def _get_decoder_call(
+    field_name: str, field_type: str, java_type: str, type_registry: TypeRegistry
+) -> str:
     """
     Generate Encoder method call for decoding a field.
 
     Returns:
         Java code lines calling appropriate Encoder method
     """
-    base_type = field_type.split('[')[0]
+    base_type = field_type.split("[")[0]
 
     if not type_registry.is_atomic(base_type):
         raise ValueError(f"Unknown type: {base_type}")
@@ -586,7 +697,7 @@ def _get_decoder_call(field_name: str, field_type: str, java_type: str, type_reg
         # Call Encoder.decodeXXX()
         decoder_name = f"decode{_capitalize_first(base_type)}"
 
-        if base_type == 'string':
+        if base_type == "string":
             # String needs max length parameter (using ProtocolConstants.STRING_MAX_LENGTH from config)
             return f"{java_type} {field_name} = Decoder.{decoder_name}(data, offset, ProtocolConstants.STRING_MAX_LENGTH);\n        offset += 1 + {field_name}.length();"
         else:
@@ -598,7 +709,9 @@ def _get_decoder_call(field_name: str, field_type: str, java_type: str, type_reg
         return f"{java_type} {field_name} = {java_type}.decode(data);\n        offset += {java_type}.MAX_PAYLOAD_SIZE;"
 
 
-def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> int:
+def _calculate_max_payload_size(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int
+) -> int:
     """
     Calculate maximum payload size in bytes (7-bit encoded).
 
@@ -624,12 +737,14 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
 
                 if atomic.is_builtin:
                     # Builtin type - use size_bytes from YAML
-                    if atomic.size_bytes == 'variable':
+                    if atomic.size_bytes == "variable":
                         # String: 1 byte length prefix + STRING_MAX_LENGTH chars
                         base_size = 1 + string_max_length  # From sysex_protocol_config.yaml
                     else:
                         if atomic.size_bytes is None or isinstance(atomic.size_bytes, str):
-                            raise ValueError(f"Invalid size_bytes for {base_type}: {atomic.size_bytes}")
+                            raise ValueError(
+                                f"Invalid size_bytes for {base_type}: {atomic.size_bytes}"
+                            )
                         base_size = _get_encoded_size(base_type, atomic.size_bytes)
                 else:
                     # Nested struct - not supported in Python-unified architecture
@@ -639,7 +754,9 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
         else:  # Composite
             assert isinstance(field, CompositeField)
             # Recursively calculate size of nested fields
-            nested_size = _calculate_max_payload_size(field.fields, type_registry, string_max_length)
+            nested_size = _calculate_max_payload_size(
+                field.fields, type_registry, string_max_length
+            )
 
             if field.array:
                 # Array of composites: count byte + (nested_size × array_size)
@@ -652,7 +769,9 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
     return total_size
 
 
-def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> int:
+def _calculate_min_payload_size(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int
+) -> int:
     """
     Calculate minimum payload size in bytes (7-bit encoded) with empty strings.
     Used for decode validation to allow variable-length messages.
@@ -680,12 +799,14 @@ def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: Type
 
                 if atomic.is_builtin:
                     # Builtin type - use size_bytes from YAML
-                    if atomic.size_bytes == 'variable':
+                    if atomic.size_bytes == "variable":
                         # String: 1 byte length prefix only (empty string)
                         base_size = 1
                     else:
                         if atomic.size_bytes is None or isinstance(atomic.size_bytes, str):
-                            raise ValueError(f"Invalid size_bytes for {base_type}: {atomic.size_bytes}")
+                            raise ValueError(
+                                f"Invalid size_bytes for {base_type}: {atomic.size_bytes}"
+                            )
                         base_size = _get_encoded_size(base_type, atomic.size_bytes)
                 else:
                     # Nested struct - not supported in Python-unified architecture
@@ -695,7 +816,9 @@ def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: Type
         else:  # Composite
             assert isinstance(field, CompositeField)
             # Recursively calculate size of nested fields
-            nested_size = _calculate_min_payload_size(field.fields, type_registry, string_max_length)
+            nested_size = _calculate_min_payload_size(
+                field.fields, type_registry, string_max_length
+            )
 
             if field.array:
                 # Array of composites: count byte + (nested_size × array_size)
@@ -720,19 +843,19 @@ def _get_encoded_size(type_name: str, raw_size: int) -> int:
         Encoded size in bytes
     """
     # bool: 1 byte (0x00 or 0x01)
-    if type_name == 'bool':
+    if type_name == "bool":
         return 1
 
     # uint8, int8: 1 byte (no encoding)
-    if type_name in ('uint8', 'int8'):
+    if type_name in ("uint8", "int8"):
         return 1
 
     # uint16, int16: 2 → 3 bytes
-    if type_name in ('uint16', 'int16'):
+    if type_name in ("uint16", "int16"):
         return 3
 
     # uint32, int32, float32: 4 → 5 bytes
-    if type_name in ('uint32', 'int32', 'float32'):
+    if type_name in ("uint32", "int32", "float32"):
         return 5
 
     # Default: assume 7-bit encoding (size * 8 / 7, rounded up)
@@ -762,8 +885,8 @@ def _to_pascal_case(s: str) -> str:
     """
     if not s:
         return s
-    words = s.split('_')
-    return ''.join(word.capitalize() for word in words)
+    words = s.split("_")
+    return "".join(word.capitalize() for word in words)
 
 
 def _to_getter_name(field_name: str) -> str:
@@ -782,7 +905,7 @@ def _to_getter_name(field_name: str) -> str:
         Getter method name
     """
     # Special case for boolean fields starting with "is"
-    if field_name.startswith('is') and len(field_name) > 2 and field_name[2].isupper():
+    if field_name.startswith("is") and len(field_name) > 2 and field_name[2].isupper():
         return field_name
 
     # Standard getter
@@ -792,6 +915,7 @@ def _to_getter_name(field_name: str) -> str:
 # ============================================================================
 # COMPOSITE FIELD SUPPORT (Phase 5 - Java)
 # ============================================================================
+
 
 def _field_to_pascal_case(field_name: str) -> str:
     """
@@ -807,7 +931,9 @@ def _field_to_pascal_case(field_name: str) -> str:
     return field_name[0].upper() + field_name[1:]
 
 
-def _generate_inner_classes(fields: Sequence[FieldBase], type_registry: TypeRegistry, depth: int = 0) -> str:
+def _generate_inner_classes(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, depth: int = 0
+) -> str:
     """
     Recursively generate inner static classes for composite fields.
 
@@ -838,11 +964,11 @@ def _generate_single_inner_class(field: CompositeField, type_registry: TypeRegis
     class_name = _field_to_pascal_case(field.name)
 
     lines: list[str] = [
-        f"    // ============================================================================",
+        "    // ============================================================================",
         f"    // Inner Class: {class_name}",
-        f"    // ============================================================================",
-        f"",
-        f"    public static final class {class_name} {{"
+        "    // ============================================================================",
+        "",
+        f"    public static final class {class_name} {{",
     ]
 
     # Fields
@@ -858,7 +984,9 @@ def _generate_single_inner_class(field: CompositeField, type_registry: TypeRegis
         else:  # Nested composite
             nested_class_name = _field_to_pascal_case(nested_field.name)
             if nested_field.array:
-                lines.append(f"        private final List<{nested_class_name}> {nested_field.name};")
+                lines.append(
+                    f"        private final List<{nested_class_name}> {nested_field.name};"
+                )
             else:
                 lines.append(f"        private final {nested_class_name} {nested_field.name};")
 
@@ -902,7 +1030,7 @@ def _generate_single_inner_class(field: CompositeField, type_registry: TypeRegis
 
         lines.append(f"        public {java_type} {getter_name}() {{")
         lines.append(f"            return {nested_field.name};")
-        lines.append(f"        }}")
+        lines.append("        }")
         lines.append("")
 
     lines.append("    }")
@@ -914,6 +1042,7 @@ def _generate_single_inner_class(field: CompositeField, type_registry: TypeRegis
 # ============================================================================
 # IMPORT ANALYSIS HELPERS
 # ============================================================================
+
 
 def _needs_list_import(fields: Sequence[FieldBase]) -> bool:
     """Check if List import is needed (any array field)."""
@@ -933,7 +1062,7 @@ def _needs_constants_import(fields: Sequence[FieldBase], type_registry: TypeRegi
     for field in fields:
         if field.is_primitive():
             assert isinstance(field, PrimitiveField)
-            if field.type_name.value == 'string':
+            if field.type_name.value == "string":
                 return True
         if field.is_composite():
             assert isinstance(field, CompositeField)

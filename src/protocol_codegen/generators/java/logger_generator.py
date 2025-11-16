@@ -29,16 +29,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 # Import field classes for runtime isinstance checks
-from protocol_codegen.core.field import FieldBase, PrimitiveField, CompositeField
+from protocol_codegen.core.field import CompositeField, FieldBase, PrimitiveField
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
     from protocol_codegen.core.loader import TypeRegistry
 
 
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
 
 def _to_camel_case(pascal_case: str) -> str:
     """
@@ -83,11 +85,16 @@ def _to_getter_name(field_name: str, is_boolean: bool = False) -> str:
         ("deviceName", False) -> "getDeviceName"
     """
     # Boolean getters starting with "is" keep the "is" prefix
-    if is_boolean and field_name.startswith('is') and len(field_name) > 2 and field_name[2].isupper():
+    if (
+        is_boolean
+        and field_name.startswith("is")
+        and len(field_name) > 2
+        and field_name[2].isupper()
+    ):
         return field_name
 
     # Standard getter: capitalize first letter and prepend "get"
-    return 'get' + field_name[0].upper() + field_name[1:]
+    return "get" + field_name[0].upper() + field_name[1:]
 
 
 def _get_java_type_name(type_name: str, _type_registry: TypeRegistry) -> str:
@@ -103,15 +110,15 @@ def _get_java_type_name(type_name: str, _type_registry: TypeRegistry) -> str:
     """
     # Map protocol types to Java types
     type_map = {
-        'bool': 'boolean',
-        'uint8': 'int',
-        'uint16': 'int',
-        'uint32': 'long',
-        'int8': 'byte',
-        'int16': 'short',
-        'int32': 'int',
-        'float32': 'float',
-        'string': 'String'
+        "bool": "boolean",
+        "uint8": "int",
+        "uint16": "int",
+        "uint32": "long",
+        "int8": "byte",
+        "int16": "short",
+        "int32": "int",
+        "float32": "float",
+        "string": "String",
     }
 
     return type_map.get(type_name, type_name)
@@ -121,11 +128,8 @@ def _get_java_type_name(type_name: str, _type_registry: TypeRegistry) -> str:
 # FIELD FORMATTING
 # ============================================================================
 
-def _format_field_for_log(
-    field: FieldBase,
-    type_registry: TypeRegistry,
-    indent: int
-) -> list[str]:
+
+def _format_field_for_log(field: FieldBase, type_registry: TypeRegistry, indent: int) -> list[str]:
     """
     Route field to appropriate formatting function.
 
@@ -152,9 +156,7 @@ def _format_field_for_log(
 
 
 def _format_primitive_scalar(
-    field: PrimitiveField,
-    type_registry: TypeRegistry,
-    indent: int
+    field: PrimitiveField, type_registry: TypeRegistry, indent: int
 ) -> list[str]:
     """
     Format primitive scalar field (e.g., bool, int, float, string).
@@ -176,31 +178,37 @@ def _format_primitive_scalar(
     indent_str = _get_indent_string(indent + 1)
     type_name = field.type_name.value
     java_type = _get_java_type_name(type_name, type_registry)
-    is_boolean = java_type == 'boolean'
+    is_boolean = java_type == "boolean"
     getter = _to_getter_name(field.name, is_boolean)
 
     lines: list[str] = []
 
-    if type_name == 'bool':
+    if type_name == "bool":
         # Boolean: true/false (no quotes)
-        lines.append(f'        sb.append("{indent_str}{field.name}: ").append({getter}() ? "true" : "false").append("\\n");')
-    elif type_name == 'string':
+        lines.append(
+            f'        sb.append("{indent_str}{field.name}: ").append({getter}() ? "true" : "false").append("\\n");'
+        )
+    elif type_name == "string":
         # String: "value" (with quotes)
-        lines.append(f'        sb.append("{indent_str}{field.name}: \\"").append({getter}()).append("\\"\\n");')
-    elif type_name == 'float32':
+        lines.append(
+            f'        sb.append("{indent_str}{field.name}: \\"").append({getter}()).append("\\"\\n");'
+        )
+    elif type_name == "float32":
         # Float: 0.7500 (4 decimals via formatFloat)
-        lines.append(f'        sb.append("{indent_str}{field.name}: ").append(formatFloat({getter}())).append("\\n");')
+        lines.append(
+            f'        sb.append("{indent_str}{field.name}: ").append(formatFloat({getter}())).append("\\n");'
+        )
     else:
         # Integer types: direct append
-        lines.append(f'        sb.append("{indent_str}{field.name}: ").append({getter}()).append("\\n");')
+        lines.append(
+            f'        sb.append("{indent_str}{field.name}: ").append({getter}()).append("\\n");'
+        )
 
     return lines
 
 
 def _format_primitive_array(
-    field: PrimitiveField,
-    type_registry: TypeRegistry,
-    indent: int
+    field: PrimitiveField, type_registry: TypeRegistry, indent: int
 ) -> list[str]:
     """
     Format primitive array field (e.g., string[], int[]).
@@ -229,42 +237,48 @@ def _format_primitive_array(
 
     lines: list[str] = []
     lines.append(f'        sb.append("{indent_str}{field.name}:");')
-    lines.append(f'        if ({getter}().isEmpty()) {{')
-    lines.append(f'            sb.append(" []\\n");')
-    lines.append(f'        }} else {{')
-    lines.append(f'            sb.append("\\n");')
+    lines.append(f"        if ({getter}().isEmpty()) {{")
+    lines.append('            sb.append(" []\\n");')
+    lines.append("        } else {")
+    lines.append('            sb.append("\\n");')
 
     # Loop through array items
-    if type_name == 'string':
+    if type_name == "string":
         # String array: with quotes
-        lines.append(f'            for (String item : {getter}()) {{')
-        lines.append(f'                sb.append("{item_indent_str}- \\"").append(item).append("\\"\\n");')
-        lines.append(f'            }}')
-    elif type_name == 'float32':
+        lines.append(f"            for (String item : {getter}()) {{")
+        lines.append(
+            f'                sb.append("{item_indent_str}- \\"").append(item).append("\\"\\n");'
+        )
+        lines.append("            }")
+    elif type_name == "float32":
         # Float array: with formatFloat
-        lines.append(f'            for (float item : {getter}()) {{')
-        lines.append(f'                sb.append("{item_indent_str}- ").append(formatFloat(item)).append("\\n");')
-        lines.append(f'            }}')
-    elif type_name == 'bool':
+        lines.append(f"            for (float item : {getter}()) {{")
+        lines.append(
+            f'                sb.append("{item_indent_str}- ").append(formatFloat(item)).append("\\n");'
+        )
+        lines.append("            }")
+    elif type_name == "bool":
         # Boolean array
-        lines.append(f'            for (boolean item : {getter}()) {{')
-        lines.append(f'                sb.append("{item_indent_str}- ").append(item ? "true" : "false").append("\\n");')
-        lines.append(f'            }}')
+        lines.append(f"            for (boolean item : {getter}()) {{")
+        lines.append(
+            f'                sb.append("{item_indent_str}- ").append(item ? "true" : "false").append("\\n");'
+        )
+        lines.append("            }")
     else:
         # Integer arrays
-        lines.append(f'            for ({java_type} item : {getter}()) {{')
-        lines.append(f'                sb.append("{item_indent_str}- ").append(item).append("\\n");')
-        lines.append(f'            }}')
+        lines.append(f"            for ({java_type} item : {getter}()) {{")
+        lines.append(
+            f'                sb.append("{item_indent_str}- ").append(item).append("\\n");'
+        )
+        lines.append("            }")
 
-    lines.append(f'        }}')
+    lines.append("        }")
 
     return lines
 
 
 def _format_composite_scalar(
-    field: CompositeField,
-    type_registry: TypeRegistry,
-    indent: int
+    field: CompositeField, type_registry: TypeRegistry, indent: int
 ) -> list[str]:
     """
     Format composite scalar field (nested struct).
@@ -290,17 +304,16 @@ def _format_composite_scalar(
 
     # Format nested fields - need to access via composite object
     for nested_field in field.fields:
-        nested_lines = _format_composite_nested_field(nested_field, type_registry, indent + 1, getter)
+        nested_lines = _format_composite_nested_field(
+            nested_field, type_registry, indent + 1, getter
+        )
         lines.extend(nested_lines)
 
     return lines
 
 
 def _format_composite_nested_field(
-    field: FieldBase,
-    type_registry: TypeRegistry,
-    indent: int,
-    parent_getter: str
+    field: FieldBase, type_registry: TypeRegistry, indent: int, parent_getter: str
 ) -> list[str]:
     """
     Format a field that's nested inside a composite scalar.
@@ -320,19 +333,27 @@ def _format_composite_nested_field(
         assert isinstance(field, PrimitiveField), "Primitive field must be PrimitiveField instance"
         type_name = field.type_name.value
         java_type = _get_java_type_name(type_name, type_registry)
-        is_boolean = java_type == 'boolean'
+        is_boolean = java_type == "boolean"
         nested_getter = _to_getter_name(field.name, is_boolean)
 
         lines: list[str] = []
 
-        if type_name == 'bool':
-            lines.append(f'        sb.append("{indent_str}{field.name}: ").append({parent_getter}().{nested_getter}() ? "true" : "false").append("\\n");')
-        elif type_name == 'string':
-            lines.append(f'        sb.append("{indent_str}{field.name}: \\"").append({parent_getter}().{nested_getter}()).append("\\"\\n");')
-        elif type_name == 'float32':
-            lines.append(f'        sb.append("{indent_str}{field.name}: ").append(formatFloat({parent_getter}().{nested_getter}())).append("\\n");')
+        if type_name == "bool":
+            lines.append(
+                f'        sb.append("{indent_str}{field.name}: ").append({parent_getter}().{nested_getter}() ? "true" : "false").append("\\n");'
+            )
+        elif type_name == "string":
+            lines.append(
+                f'        sb.append("{indent_str}{field.name}: \\"").append({parent_getter}().{nested_getter}()).append("\\"\\n");'
+            )
+        elif type_name == "float32":
+            lines.append(
+                f'        sb.append("{indent_str}{field.name}: ").append(formatFloat({parent_getter}().{nested_getter}())).append("\\n");'
+            )
         else:
-            lines.append(f'        sb.append("{indent_str}{field.name}: ").append({parent_getter}().{nested_getter}()).append("\\n");')
+            lines.append(
+                f'        sb.append("{indent_str}{field.name}: ").append({parent_getter}().{nested_getter}()).append("\\n");'
+            )
 
         return lines
     else:
@@ -342,9 +363,7 @@ def _format_composite_nested_field(
 
 
 def _format_composite_array(
-    field: CompositeField,
-    _type_registry: TypeRegistry,
-    indent: int
+    field: CompositeField, _type_registry: TypeRegistry, indent: int
 ) -> list[str]:
     """
     Format array of composite fields.
@@ -373,50 +392,70 @@ def _format_composite_array(
 
     lines: list[str] = []
     lines.append(f'        sb.append("{indent_str}{field.name}:\\n");')
-    lines.append(f'        for ({class_name} item : {getter}()) {{')
+    lines.append(f"        for ({class_name} item : {getter}()) {{")
 
     # First field gets "- " prefix, rest are indented normally
     first_field = True
     for nested_field in field.fields:
-        is_bool = (isinstance(nested_field, PrimitiveField) and
-                   nested_field.is_primitive() and
-                   nested_field.type_name.value == 'bool')
+        is_bool = (
+            isinstance(nested_field, PrimitiveField)
+            and nested_field.is_primitive()
+            and nested_field.type_name.value == "bool"
+        )
         nested_getter = _to_getter_name(nested_field.name, is_bool)
 
         if nested_field.is_primitive() and not nested_field.is_array():
             # Primitive scalar in composite array
-            assert isinstance(nested_field, PrimitiveField), "Primitive field must be PrimitiveField instance"
+            assert isinstance(nested_field, PrimitiveField), (
+                "Primitive field must be PrimitiveField instance"
+            )
             type_name = nested_field.type_name.value
 
             if first_field:
                 # First field: inline with "- "
-                if type_name == 'bool':
-                    lines.append(f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(item.{nested_getter}() ? "true" : "false").append("\\n");')
-                elif type_name == 'string':
-                    lines.append(f'            sb.append("{item_indent_str}- {nested_field.name}: \\"").append(item.{nested_getter}()).append("\\"\\n");')
-                elif type_name == 'float32':
-                    lines.append(f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(formatFloat(item.{nested_getter}())).append("\\n");')
+                if type_name == "bool":
+                    lines.append(
+                        f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(item.{nested_getter}() ? "true" : "false").append("\\n");'
+                    )
+                elif type_name == "string":
+                    lines.append(
+                        f'            sb.append("{item_indent_str}- {nested_field.name}: \\"").append(item.{nested_getter}()).append("\\"\\n");'
+                    )
+                elif type_name == "float32":
+                    lines.append(
+                        f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(formatFloat(item.{nested_getter}())).append("\\n");'
+                    )
                 else:
-                    lines.append(f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(item.{nested_getter}()).append("\\n");')
+                    lines.append(
+                        f'            sb.append("{item_indent_str}- {nested_field.name}: ").append(item.{nested_getter}()).append("\\n");'
+                    )
                 first_field = False
             else:
                 # Subsequent fields: indented (2 extra spaces after "- ")
                 field_indent = item_indent_str + "  "
-                if type_name == 'bool':
-                    lines.append(f'            sb.append("{field_indent}{nested_field.name}: ").append(item.{nested_getter}() ? "true" : "false").append("\\n");')
-                elif type_name == 'string':
-                    lines.append(f'            sb.append("{field_indent}{nested_field.name}: \\"").append(item.{nested_getter}()).append("\\"\\n");')
-                elif type_name == 'float32':
-                    lines.append(f'            sb.append("{field_indent}{nested_field.name}: ").append(formatFloat(item.{nested_getter}())).append("\\n");')
+                if type_name == "bool":
+                    lines.append(
+                        f'            sb.append("{field_indent}{nested_field.name}: ").append(item.{nested_getter}() ? "true" : "false").append("\\n");'
+                    )
+                elif type_name == "string":
+                    lines.append(
+                        f'            sb.append("{field_indent}{nested_field.name}: \\"").append(item.{nested_getter}()).append("\\"\\n");'
+                    )
+                elif type_name == "float32":
+                    lines.append(
+                        f'            sb.append("{field_indent}{nested_field.name}: ").append(formatFloat(item.{nested_getter}())).append("\\n");'
+                    )
                 else:
-                    lines.append(f'            sb.append("{field_indent}{nested_field.name}: ").append(item.{nested_getter}()).append("\\n");')
+                    lines.append(
+                        f'            sb.append("{field_indent}{nested_field.name}: ").append(item.{nested_getter}()).append("\\n");'
+                    )
         else:
             # Arrays or nested composites need special handling
             # For now, we'll handle them similarly but may need refinement
             # TODO: Handle nested arrays and composites within composite arrays if needed
             pass
 
-    lines.append(f'        }}')
+    lines.append("        }")
 
     return lines
 
@@ -424,6 +463,7 @@ def _format_composite_array(
 # ============================================================================
 # HELPER: DETECT FLOAT FIELDS
 # ============================================================================
+
 
 def _contains_float_fields(fields: Sequence[FieldBase]) -> bool:
     """
@@ -438,7 +478,7 @@ def _contains_float_fields(fields: Sequence[FieldBase]) -> bool:
     for field in fields:
         if field.is_primitive():
             assert isinstance(field, PrimitiveField), "Primitive field must be PrimitiveField"
-            if field.type_name.value == 'float32':
+            if field.type_name.value == "float32":
                 return True
         elif field.is_composite():
             assert isinstance(field, CompositeField), "Composite field must be CompositeField"
@@ -452,10 +492,9 @@ def _contains_float_fields(fields: Sequence[FieldBase]) -> bool:
 # MAIN GENERATION FUNCTION
 # ============================================================================
 
+
 def generate_log_method(
-    class_name: str,
-    fields: Sequence[FieldBase],
-    type_registry: TypeRegistry
+    class_name: str, fields: Sequence[FieldBase], type_registry: TypeRegistry
 ) -> str:
     """
     Generate toString() method for Java message class.
@@ -494,42 +533,48 @@ def generate_log_method(
 
     # Only generate formatFloat if message contains float fields
     if has_floats:
-        lines.extend([
-            "    /**",
-            "     * Format float with 4 decimal places, handling edge cases.",
-            "     * ",
-            "     * @param value Float value to format",
-            "     * @return Formatted string (e.g., \"3.1416\", \"NaN\", \"Inf\")",
-            "     */",
-            "    private static String formatFloat(float value) {",
-            "        if (Float.isNaN(value)) return \"NaN\";",
-            "        if (Float.isInfinite(value)) return value > 0 ? \"Inf\" : \"-Inf\";",
-            "        return String.format(\"%.4f\", value);",
-            "    }",
-            "    ",
-        ])
+        lines.extend(
+            [
+                "    /**",
+                "     * Format float with 4 decimal places, handling edge cases.",
+                "     * ",
+                "     * @param value Float value to format",
+                '     * @return Formatted string (e.g., "3.1416", "NaN", "Inf")',
+                "     */",
+                "    private static String formatFloat(float value) {",
+                '        if (Float.isNaN(value)) return "NaN";',
+                '        if (Float.isInfinite(value)) return value > 0 ? "Inf" : "-Inf";',
+                '        return String.format("%.4f", value);',
+                "    }",
+                "    ",
+            ]
+        )
 
-    lines.extend([
-        "    /**",
-        "     * Convert message to YAML format for logging.",
-        "     * ",
-        "     * @return YAML string representation",
-        "     */",
-        "    @Override",
-        "    public String toString() {",
-        "        StringBuilder sb = new StringBuilder(256);",
-        f'        sb.append("# {display_name}\\n");',
-        f'        sb.append("{message_key}:\\n");',
-    ])
+    lines.extend(
+        [
+            "    /**",
+            "     * Convert message to YAML format for logging.",
+            "     * ",
+            "     * @return YAML string representation",
+            "     */",
+            "    @Override",
+            "    public String toString() {",
+            "        StringBuilder sb = new StringBuilder(256);",
+            f'        sb.append("# {display_name}\\n");',
+            f'        sb.append("{message_key}:\\n");',
+        ]
+    )
 
     # Generate field formatting
     for field in fields:
         field_lines = _format_field_for_log(field, type_registry, indent=0)
         lines.extend(field_lines)
 
-    lines.extend([
-        "        return sb.toString();",
-        "    }",
-    ])
+    lines.extend(
+        [
+            "        return sb.toString();",
+            "    }",
+        ]
+    )
 
     return "\n".join(lines)

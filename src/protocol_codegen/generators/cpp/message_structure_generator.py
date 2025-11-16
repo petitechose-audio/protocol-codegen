@@ -8,9 +8,10 @@ This allows Protocol.hpp to include all messages with a single #include.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.message import Message
 
 
@@ -29,13 +30,13 @@ def generate_message_structure_hpp(messages: list[Message], output_path: Path) -
     includes: list[str] = []
     for message in messages:
         # Convert SCREAMING_SNAKE_CASE to PascalCase
-        pascal_name = ''.join(word.capitalize() for word in message.name.split('_'))
+        pascal_name = "".join(word.capitalize() for word in message.name.split("_"))
         struct_name = f"{pascal_name}Message"
         includes.append(f'#include "struct/{struct_name}.hpp"')
 
-    includes_str = '\n'.join(includes)
+    includes_str = "\n".join(includes)
 
-    code = f'''/**
+    code = f"""/**
  * MessageStructure.hpp - Umbrella header for all protocol messages
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -54,10 +55,10 @@ def generate_message_structure_hpp(messages: list[Message], output_path: Path) -
 
 // Include all message structs
 {includes_str}
-'''
+"""
 
     # Write to file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(code, encoding='utf-8')
+    output_path.write_text(code, encoding="utf-8")
 
     return code

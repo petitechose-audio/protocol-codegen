@@ -8,35 +8,34 @@ This replaces sysex_protocol_config.yaml with pure Python configuration.
 """
 
 from .config import (
+    MessageIDRange,
+    MessageIDRanges,
+    ProtocolRoles,
     SysExConfig,
     SysExFraming,
-    SysExStructure,
     SysExLimits,
-    MessageIDRanges,
-    MessageIDRange,
-    ProtocolRoles,
+    SysExStructure,
 )
-
 
 # Default configuration instance
 BUILTIN_SYSEX_CONFIG = SysExConfig(
     framing=SysExFraming(
-        start=0xF0,              # MIDI SysEx start byte
-        end=0xF7,                # MIDI SysEx end byte
-        manufacturer_id=0x7D,    # Educational/development use
-        device_id=0x00,          # All devices
+        start=0xF0,  # MIDI SysEx start byte
+        end=0xF7,  # MIDI SysEx end byte
+        manufacturer_id=0x7D,  # Educational/development use
+        device_id=0x00,  # All devices
     ),
     structure=SysExStructure(
-        min_message_length=6,    # start + mfr + dev + type + end = minimum 5, +1 for safety
-        message_type_offset=3,   # After start, mfr_id, dev_id
-        from_host_offset=4,      # After message_type
-        payload_offset=5,        # After from_host flag
+        min_message_length=6,  # start + mfr + dev + type + end = minimum 5, +1 for safety
+        message_type_offset=3,  # After start, mfr_id, dev_id
+        from_host_offset=4,  # After message_type
+        payload_offset=5,  # After from_host flag
     ),
     limits=SysExLimits(
-        string_max_length=16,    # Max string length: 16 caractères
-        array_max_items=32,      # Max array size: 32 éléments
-        max_payload_size=128,    # Max payload bytes
-        max_message_size=256,    # Max total message size
+        string_max_length=16,  # Max string length: 16 caractères
+        array_max_items=32,  # Max array size: 32 éléments
+        max_payload_size=128,  # Max payload bytes
+        max_message_size=256,  # Max total message size
     ),
     message_id_ranges=MessageIDRanges(
         controller_to_host=MessageIDRange(start=0x00, end=0x3F),
@@ -44,7 +43,7 @@ BUILTIN_SYSEX_CONFIG = SysExConfig(
         bidirectional=MessageIDRange(start=0xC0, end=0xC7),
     ),
     roles=ProtocolRoles(
-        cpp='controller',        # C++ acts as controller (hardware)
-        java='host',             # Java acts as host (DAW)
+        cpp="controller",  # C++ acts as controller (hardware)
+        java="host",  # Java acts as host (DAW)
     ),
 )

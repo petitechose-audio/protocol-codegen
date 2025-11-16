@@ -15,12 +15,13 @@ Single Responsibility: Import message definitions from plugin.
 """
 
 from __future__ import annotations
+
 import importlib
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from types import ModuleType
 
 from .message import Message
@@ -56,7 +57,7 @@ def import_sysex_messages(plugin_dir: Path) -> list[Message]:
         >>> messages[0].name
         'TransportPlay'
     """
-    sysex_protocol_dir: Path = plugin_dir / 'sysex_protocol'
+    sysex_protocol_dir: Path = plugin_dir / "sysex_protocol"
 
     # Validate package exists
     if not sysex_protocol_dir.exists():
@@ -66,11 +67,10 @@ def import_sysex_messages(plugin_dir: Path) -> list[Message]:
         )
 
     # Validate it's a package (has __init__.py)
-    init_file: Path = sysex_protocol_dir / '__init__.py'
+    init_file: Path = sysex_protocol_dir / "__init__.py"
     if not init_file.exists():
         raise FileNotFoundError(
-            f"sysex_protocol is not a package (missing __init__.py)\n"
-            f"Expected: {init_file}"
+            f"sysex_protocol is not a package (missing __init__.py)\nExpected: {init_file}"
         )
 
     # Add plugin directory to sys.path temporarily to enable package import
@@ -91,7 +91,7 @@ def import_sysex_messages(plugin_dir: Path) -> list[Message]:
             sys.path.remove(str(plugin_parent))
 
     # Extract ALL_MESSAGES
-    if not hasattr(module, 'ALL_MESSAGES'):
+    if not hasattr(module, "ALL_MESSAGES"):
         raise AttributeError(
             f"ALL_MESSAGES not defined in {package_name}\n"
             f"Expected: ALL_MESSAGES = [] at module level"
@@ -101,13 +101,11 @@ def import_sysex_messages(plugin_dir: Path) -> list[Message]:
 
     # Validate type
     if not isinstance(all_messages_raw, list):
-        raise TypeError(
-            f"ALL_MESSAGES must be a list, got {type(all_messages_raw).__name__}"
-        )
+        raise TypeError(f"ALL_MESSAGES must be a list, got {type(all_messages_raw).__name__}")
 
     # After isinstance check, we know it's a list but Pyright doesn't infer the type
     # Use cast to tell type checker this is a list (runtime check already done above)
-    all_messages: list[object] = cast(list[object], all_messages_raw)
+    all_messages: list[object] = cast("list[object]", all_messages_raw)
 
     # Validate contents and build typed list
     validated_messages: list[Message] = []
@@ -141,13 +139,13 @@ def validate_message_file_structure(plugin_dir: Path) -> bool:
     Note:
         This is a lightweight check. Full validation happens during import.
     """
-    messages_file = plugin_dir / 'sysex_protocol' / 'sysex_messages.py'
+    messages_file = plugin_dir / "sysex_protocol" / "sysex_messages.py"
 
     if not messages_file.exists():
         return False
 
     try:
-        content = messages_file.read_text(encoding='utf-8')
-        return 'ALL_MESSAGES' in content
-    except (IOError, UnicodeDecodeError):
+        content = messages_file.read_text(encoding="utf-8")
+        return "ALL_MESSAGES" in content
+    except (OSError, UnicodeDecodeError):
         return False

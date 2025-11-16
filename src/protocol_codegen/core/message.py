@@ -15,9 +15,14 @@ Reusability: Used across all plugins, not specific to any one.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-from collections.abc import Sequence
-from .field import FieldBase
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .field import FieldBase
 
 
 @dataclass
@@ -55,18 +60,15 @@ class Message:
         >>> TRANSPORT_PLAY.name  # 'TRANSPORT_PLAY'
     """
 
-    description: str                # Human-readable description
-    fields: Sequence[FieldBase]     # Field definitions (can be PrimitiveField or CompositeField)
-    optimistic: bool = False        # Enable optimistic updates (default: False)
+    description: str  # Human-readable description
+    fields: Sequence[FieldBase]  # Field definitions (can be PrimitiveField or CompositeField)
+    optimistic: bool = False  # Enable optimistic updates (default: False)
 
     # Name is injected by auto-discovery (message/__init__.py)
     # Always set before messages are used, so we type it as str (not Optional[str])
-    name: str = ''  # Default empty, but always overwritten by auto-discovery
+    name: str = ""  # Default empty, but always overwritten by auto-discovery
 
     def __str__(self) -> str:
         """String representation for debugging and display"""
         name_str = self.name or "UNNAMED"
-        return (
-            f"Message({name_str}, "
-            f"{len(self.fields)} fields)"
-        )
+        return f"Message({name_str}, {len(self.fields)} fields)"

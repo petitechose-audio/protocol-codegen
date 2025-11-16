@@ -8,9 +8,10 @@ Protocol inherits this and users assign callbacks.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.message import Message
 
 
@@ -29,17 +30,17 @@ def generate_protocol_callbacks_hpp(messages: list[Message], output_path: Path) 
     callbacks: list[str] = []
     for message in messages:
         # Convert SCREAMING_SNAKE_CASE to PascalCase
-        pascal_name = ''.join(word.capitalize() for word in message.name.split('_'))
+        pascal_name = "".join(word.capitalize() for word in message.name.split("_"))
         class_name = f"{pascal_name}Message"
 
         # Callback name: onTransportPlay, onParameterSet, etc.
         callback_name = f"on{pascal_name}"
 
-        callbacks.append(f'    std::function<void(const {class_name}&)> {callback_name};')
+        callbacks.append(f"    std::function<void(const {class_name}&)> {callback_name};")
 
-    callbacks_str = '\n'.join(callbacks)
+    callbacks_str = "\n".join(callbacks)
 
-    code = f'''/**
+    code = f"""/**
  * ProtocolCallbacks.hpp - Typed callbacks for all messages
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -77,10 +78,10 @@ protected:
 }};
 
 }}  // namespace Protocol
-'''
+"""
 
     # Write to file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(code, encoding='utf-8')
+    output_path.write_text(code, encoding="utf-8")
 
     return code

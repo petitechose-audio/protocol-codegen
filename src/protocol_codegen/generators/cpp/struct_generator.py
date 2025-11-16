@@ -21,19 +21,26 @@ Generated Output:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 # Import field classes for runtime isinstance checks
-from protocol_codegen.core.field import FieldBase, PrimitiveField, CompositeField
+from protocol_codegen.core.field import CompositeField, FieldBase, PrimitiveField
 from protocol_codegen.generators.cpp.logger_generator import generate_log_method
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from protocol_codegen.core.message import Message
+    from pathlib import Path
+
     from protocol_codegen.core.loader import TypeRegistry
+    from protocol_codegen.core.message import Message
 
 
-def generate_struct_hpp(message: Message, message_id: int, type_registry: TypeRegistry, output_path: Path, string_max_length: int) -> str:
+def generate_struct_hpp(
+    message: Message,
+    message_id: int,
+    type_registry: TypeRegistry,
+    output_path: Path,
+    string_max_length: int,
+) -> str:
     """
     Generate C++ struct header for a message (supports composite fields).
 
@@ -62,7 +69,9 @@ def generate_struct_hpp(message: Message, message_id: int, type_registry: TypeRe
     # NEW: Generate composite structs FIRST (if any)
     composite_structs = _generate_composite_structs(fields, type_registry)
 
-    struct_def = _generate_struct_definition(struct_name, message.name, message_id, fields, type_registry)
+    struct_def = _generate_struct_definition(
+        struct_name, message.name, message_id, fields, type_registry
+    )
     encode_fn = _generate_encode_function(struct_name, fields, type_registry, string_max_length)
     decode_fn = _generate_decode_function(struct_name, fields, type_registry, string_max_length)
 
@@ -78,7 +87,7 @@ def generate_struct_hpp(message: Message, message_id: int, type_registry: TypeRe
 
 def _generate_header(struct_name: str, description: str) -> str:
     """Generate file header with includes."""
-    return f'''/**
+    return f"""/**
  * {struct_name}.hpp - Auto-generated Protocol Struct
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -104,21 +113,21 @@ def _generate_header(struct_name: str, description: str) -> str:
 
 namespace Protocol {{
 
-'''
+"""
 
 
 def _generate_struct_definition(
     struct_name: str,
     message_name: str,  # SCREAMING_SNAKE_CASE name (e.g., "TRANSPORT_PLAY")
-    message_id: int,    # Allocated ID (e.g., 0x40)
+    message_id: int,  # Allocated ID (e.g., 0x40)
     fields: Sequence[FieldBase],  # Sequence of Field objects (primitive OR composite)
-    type_registry: TypeRegistry
+    type_registry: TypeRegistry,
 ) -> str:
     """Generate struct definition with fields (supports composites)."""
     lines = [f"struct {struct_name} {{"]
 
     # Add static MESSAGE_ID constant
-    lines.append(f"    // Auto-detected MessageID for protocol.send()")
+    lines.append("    // Auto-detected MessageID for protocol.send()")
     lines.append(f"    static constexpr MessageID MESSAGE_ID = MessageID::{message_name};")
     lines.append("")
 
@@ -130,8 +139,8 @@ def _generate_struct_definition(
     lines.append("")
 
     # Add fromHost field LAST (injected by DecoderRegistry after construction)
-    lines.append(f"    // Origin tracking (set by DecoderRegistry during decode)")
-    lines.append(f"    bool fromHost = false;")
+    lines.append("    // Origin tracking (set by DecoderRegistry during decode)")
+    lines.append("    bool fromHost = false;")
 
     lines.append("")
     return "\n".join(lines)
@@ -141,7 +150,7 @@ def _generate_encode_function(
     struct_name: str,
     fields: Sequence[FieldBase],  # Sequence of Field objects
     type_registry: TypeRegistry,
-    string_max_length: int
+    string_max_length: int,
 ) -> str:
     """Generate encode() function calling Encoder."""
     # Calculate max and min payload sizes
@@ -149,32 +158,32 @@ def _generate_encode_function(
     min_size = _calculate_min_payload_size(fields, type_registry, string_max_length)
 
     lines = [
-        f"    /**",
-        f"     * Maximum payload size in bytes (7-bit encoded)",
-        f"     */",
+        "    /**",
+        "     * Maximum payload size in bytes (7-bit encoded)",
+        "     */",
         f"    static constexpr uint16_t MAX_PAYLOAD_SIZE = {max_size};",
-        f"",
-        f"    /**",
-        f"     * Minimum payload size in bytes (with empty strings)",
-        f"     */",
+        "",
+        "    /**",
+        "     * Minimum payload size in bytes (with empty strings)",
+        "     */",
         f"    static constexpr uint16_t MIN_PAYLOAD_SIZE = {min_size};",
-        f"",
-        f"    /**",
-        f"     * Encode struct to MIDI-safe bytes",
-        f"     *",
-        f"     * @param buffer Output buffer (must have >= MAX_PAYLOAD_SIZE bytes)",
-        f"     * @param bufferSize Size of output buffer",
-        f"     * @return Number of bytes written, or 0 if buffer too small",
-        f"     */",
-        f"    uint16_t encode(uint8_t* buffer, uint16_t bufferSize) const {{",
-        f"        if (bufferSize < MAX_PAYLOAD_SIZE) return 0;",
-        f"",
+        "",
+        "    /**",
+        "     * Encode struct to MIDI-safe bytes",
+        "     *",
+        "     * @param buffer Output buffer (must have >= MAX_PAYLOAD_SIZE bytes)",
+        "     * @param bufferSize Size of output buffer",
+        "     * @return Number of bytes written, or 0 if buffer too small",
+        "     */",
+        "    uint16_t encode(uint8_t* buffer, uint16_t bufferSize) const {",
+        "        if (bufferSize < MAX_PAYLOAD_SIZE) return 0;",
+        "",
     ]
 
     # Only declare ptr if there are fields to encode
     if fields:
-        lines.append(f"        uint8_t* ptr = buffer;")
-        lines.append(f"")
+        lines.append("        uint8_t* ptr = buffer;")
+        lines.append("")
 
     # Add encode calls for each field
     for field in fields:
@@ -187,7 +196,7 @@ def _generate_encode_function(
                 lines.append(f"        for (const auto& item : {field.name}) {{")
                 encoder_call = _get_encoder_call("item", field_type_name, type_registry)
                 lines.append(f"            {encoder_call}")
-                lines.append(f"        }}")
+                lines.append("        }")
             else:
                 # Scalar primitive
                 encoder_call = _get_encoder_call(field.name, field_type_name, type_registry)
@@ -204,22 +213,36 @@ def _generate_encode_function(
                         assert isinstance(nested_field, PrimitiveField)
                         if nested_field.is_array():
                             # Nested array of primitives - encode count for dynamic arrays
-                            lines.append(f"            encodeUint8(ptr, item.{nested_field.name}.size());")
-                            lines.append(f"            for (const auto& type : item.{nested_field.name}) {{")
-                            encoder_call = _get_encoder_call("type", nested_field.type_name.value, type_registry)
+                            lines.append(
+                                f"            encodeUint8(ptr, item.{nested_field.name}.size());"
+                            )
+                            lines.append(
+                                f"            for (const auto& type : item.{nested_field.name}) {{"
+                            )
+                            encoder_call = _get_encoder_call(
+                                "type", nested_field.type_name.value, type_registry
+                            )
                             lines.append(f"                {encoder_call}")
-                            lines.append(f"            }}")
+                            lines.append("            }")
                         else:
                             # Nested scalar primitive
-                            encoder_call = _get_encoder_call(f"item.{nested_field.name}", nested_field.type_name.value, type_registry)
+                            encoder_call = _get_encoder_call(
+                                f"item.{nested_field.name}",
+                                nested_field.type_name.value,
+                                type_registry,
+                            )
                             lines.append(f"            {encoder_call}")
-                lines.append(f"        }}")
+                lines.append("        }")
             else:
                 # Single composite struct (not array)
                 for nested_field in field.fields:
                     if nested_field.is_primitive():
                         assert isinstance(nested_field, PrimitiveField)
-                        encoder_call = _get_encoder_call(f"{field.name}.{nested_field.name}", nested_field.type_name.value, type_registry)
+                        encoder_call = _get_encoder_call(
+                            f"{field.name}.{nested_field.name}",
+                            nested_field.type_name.value,
+                            type_registry,
+                        )
                         lines.append(f"        {encoder_call}")
 
     # Return statement depends on whether we have fields
@@ -228,10 +251,7 @@ def _generate_encode_function(
         lines.append("        return ptr - buffer;")
     else:
         lines.append("        return 0;")
-    lines.extend([
-        "    }",
-        ""
-    ])
+    lines.extend(["    }", ""])
 
     return "\n".join(lines)
 
@@ -240,37 +260,39 @@ def _generate_decode_function(
     struct_name: str,
     fields: Sequence[FieldBase],  # Sequence of Field objects
     type_registry: TypeRegistry,
-    string_max_length: int
+    string_max_length: int,
 ) -> str:
     """Generate static decode() function calling Encoder."""
     # Note: max_size and min_size are calculated in encode function, not needed here
     # as the decode function uses MIN_PAYLOAD_SIZE constant from the struct
 
     lines = [
-        f"    /**",
-        f"     * Decode struct from MIDI-safe bytes",
-        f"     *",
-        f"     * @param data Input buffer with encoded data",
-        f"     * @param len Length of input buffer",
-        f"     * @return Decoded struct, or etl::nullopt if invalid/insufficient data",
-        f"     */",
+        "    /**",
+        "     * Decode struct from MIDI-safe bytes",
+        "     *",
+        "     * @param data Input buffer with encoded data",
+        "     * @param len Length of input buffer",
+        "     * @return Decoded struct, or etl::nullopt if invalid/insufficient data",
+        "     */",
         f"    static etl::optional<{struct_name}> decode(",
-        f"        const uint8_t* data, uint16_t len) {{",
-        f"",
-        f"        if (len < MIN_PAYLOAD_SIZE) return etl::nullopt;",
-        f"",
+        "        const uint8_t* data, uint16_t len) {",
+        "",
+        "        if (len < MIN_PAYLOAD_SIZE) return etl::nullopt;",
+        "",
     ]
 
     # Only declare ptr and remaining if there are fields to decode
     if fields:
-        lines.extend([
-            f"        const uint8_t* ptr = data;",
-            f"        size_t remaining = len;",
-            f"",
-            f"        // Decode fields",
-        ])
+        lines.extend(
+            [
+                "        const uint8_t* ptr = data;",
+                "        size_t remaining = len;",
+                "",
+                "        // Decode fields",
+            ]
+        )
     else:
-        lines.append(f"        // No fields to decode")
+        lines.append("        // No fields to decode")
 
     # Add decode calls for each field
     field_vars: list[str] = []
@@ -281,7 +303,9 @@ def _generate_decode_function(
             if field.is_array():
                 # Primitive array (e.g., string[16])
                 lines.append(f"        uint8_t count_{field.name};")
-                lines.append(f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;")
+                lines.append(
+                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;"
+                )
                 cpp_type = _get_cpp_type_for_field(field, type_registry)
                 var_name = f"{field.name}_data"
                 lines.append(f"        {cpp_type} {var_name};")
@@ -289,19 +313,27 @@ def _generate_decode_function(
                 # For etl::vector, use push_back; for etl::array, use direct indexing
                 if field.dynamic:
                     # Dynamic vector: decode into temp var and push_back
-                    lines.append(f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{")
+                    lines.append(
+                        f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{"
+                    )
                     base_cpp_type = _get_cpp_type(field_type_name, type_registry)
                     lines.append(f"            {base_cpp_type} temp_item;")
-                    decoder_call = _get_decoder_call(f"temp_item", field_type_name, type_registry, direct_target=f"temp_item")
+                    decoder_call = _get_decoder_call(
+                        "temp_item", field_type_name, type_registry, direct_target="temp_item"
+                    )
                     lines.append(f"            {decoder_call}")
                     lines.append(f"            {var_name}.push_back(temp_item);")
-                    lines.append(f"        }}")
+                    lines.append("        }")
                 else:
                     # Fixed array: decode directly by index
-                    lines.append(f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{")
-                    decoder_call = _get_decoder_call(f"temp_item", field_type_name, type_registry, direct_target=f"{var_name}[i]")
+                    lines.append(
+                        f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{"
+                    )
+                    decoder_call = _get_decoder_call(
+                        "temp_item", field_type_name, type_registry, direct_target=f"{var_name}[i]"
+                    )
                     lines.append(f"            {decoder_call}")
-                    lines.append(f"        }}")
+                    lines.append("        }")
 
                 field_vars.append(var_name)
             else:
@@ -315,13 +347,17 @@ def _generate_decode_function(
             if field.array:
                 # Decode array count (BUG FIX: use output parameter syntax)
                 lines.append(f"        uint8_t count_{field.name};")
-                lines.append(f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;")
+                lines.append(
+                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;"
+                )
                 # etl::array type (fixed size, but we fill based on count)
                 cpp_type = _get_cpp_type_for_field(field, type_registry)
                 lines.append(f"        {cpp_type} {var_name};")
                 # Use PascalCase struct name for item type (BUG FIX #4)
                 item_struct_name = _field_to_pascal_case(field.name)
-                lines.append(f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{")
+                lines.append(
+                    f"        for (uint8_t i = 0; i < count_{field.name} && i < {field.array}; ++i) {{"
+                )
                 lines.append(f"            {item_struct_name} item;")
                 # Decode each field of the struct
                 for nested_field in field.fields:
@@ -330,35 +366,47 @@ def _generate_decode_function(
                         if nested_field.is_array():
                             # Nested array of primitives - decode count for dynamic arrays
                             lines.append(f"            uint8_t count_{nested_field.name};")
-                            lines.append(f"            if (!decodeUint8(ptr, remaining, count_{nested_field.name})) return etl::nullopt;")
+                            lines.append(
+                                f"            if (!decodeUint8(ptr, remaining, count_{nested_field.name})) return etl::nullopt;"
+                            )
 
                             # For etl::vector, we need to use push_back instead of direct indexing
                             if nested_field.dynamic:
                                 # Dynamic vector: decode into temp var and push_back
-                                lines.append(f"            for (uint8_t j = 0; j < count_{nested_field.name} && j < {nested_field.array}; ++j) {{")
-                                cpp_type = _get_cpp_type(nested_field.type_name.value, type_registry)
-                                lines.append(f"                {cpp_type} temp_{nested_field.name};")
+                                lines.append(
+                                    f"            for (uint8_t j = 0; j < count_{nested_field.name} && j < {nested_field.array}; ++j) {{"
+                                )
+                                cpp_type = _get_cpp_type(
+                                    nested_field.type_name.value, type_registry
+                                )
+                                lines.append(
+                                    f"                {cpp_type} temp_{nested_field.name};"
+                                )
                                 decoder_call = _get_decoder_call(
                                     f"temp_{nested_field.name}",
                                     nested_field.type_name.value,
                                     type_registry,
-                                    direct_target=f"temp_{nested_field.name}"
+                                    direct_target=f"temp_{nested_field.name}",
                                 )
                                 lines.append(f"                {decoder_call}")
-                                lines.append(f"                item.{nested_field.name}.push_back(temp_{nested_field.name});")
-                                lines.append(f"            }}")
+                                lines.append(
+                                    f"                item.{nested_field.name}.push_back(temp_{nested_field.name});"
+                                )
+                                lines.append("            }")
                             else:
                                 # Fixed array: decode directly by index
-                                lines.append(f"            for (uint8_t j = 0; j < count_{nested_field.name} && j < {nested_field.array}; ++j) {{")
+                                lines.append(
+                                    f"            for (uint8_t j = 0; j < count_{nested_field.name} && j < {nested_field.array}; ++j) {{"
+                                )
                                 direct_target = f"item.{nested_field.name}[j]"
                                 decoder_call = _get_decoder_call(
                                     f"item_{nested_field.name}_j",
                                     nested_field.type_name.value,
                                     type_registry,
-                                    direct_target=direct_target
+                                    direct_target=direct_target,
                                 )
                                 lines.append(f"                {decoder_call}")
-                                lines.append(f"            }}")
+                                lines.append("            }")
                         else:
                             # Nested scalar primitive
                             # OPTION B: Write directly to item struct member
@@ -367,11 +415,13 @@ def _generate_decode_function(
                                 f"item_{nested_field.name}",  # Unused when direct_target set
                                 nested_field.type_name.value,
                                 type_registry,
-                                direct_target=direct_target
+                                direct_target=direct_target,
                             )
                             lines.append(f"            {decoder_call}")
-                lines.append(f"            {var_name}[i] = item;")  # Use array index instead of push_back
-                lines.append(f"        }}")
+                lines.append(
+                    f"            {var_name}[i] = item;"
+                )  # Use array index instead of push_back
+                lines.append("        }")
             else:
                 # Single composite struct (not array)
                 # BUG FIX #2: Use capitalized struct type name instead of field name
@@ -386,7 +436,7 @@ def _generate_decode_function(
                             f"{field.name}_{nested_field.name}",  # Unused when direct_target set
                             nested_field.type_name.value,
                             type_registry,
-                            direct_target=direct_target
+                            direct_target=direct_target,
                         )
                         lines.append(f"        {decoder_call}")
             field_vars.append(var_name)
@@ -403,12 +453,7 @@ def _generate_decode_function(
             field_values.append(var)  # Array or composite - use _data variable
 
     field_list = ", ".join(field_values)
-    lines.extend([
-        "",
-        f"        return {struct_name}{{{field_list}}};",
-        "    }",
-        ""
-    ])
+    lines.extend(["", f"        return {struct_name}{{{field_list}}};", "    }", ""])
 
     return "\n".join(lines)
 
@@ -436,9 +481,9 @@ def _get_cpp_type(field_type: str, type_registry: TypeRegistry) -> str:
         C++ type string
     """
     # Check for array notation
-    if '[' in field_type:
-        base_type, array_size = field_type.split('[')
-        array_size = array_size.rstrip(']')
+    if "[" in field_type:
+        base_type, array_size = field_type.split("[")
+        array_size = array_size.rstrip("]")
         cpp_base = _get_cpp_type(base_type, type_registry)
         return f"{cpp_base}[{array_size}]"
 
@@ -447,7 +492,7 @@ def _get_cpp_type(field_type: str, type_registry: TypeRegistry) -> str:
         atomic = type_registry.get(field_type)
         if atomic.is_builtin:
             # Always use STRING_MAX_LENGTH constant for strings
-            if field_type == 'string':
+            if field_type == "string":
                 return "etl::string<STRING_MAX_LENGTH>"
             assert atomic.cpp_type is not None
             return atomic.cpp_type
@@ -466,7 +511,7 @@ def _get_encoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         C++ code line calling appropriate Encoder function
     """
     # Extract base type (handle arrays)
-    base_type = field_type.split('[')[0]
+    base_type = field_type.split("[")[0]
 
     if not type_registry.is_atomic(base_type):
         raise ValueError(f"Unknown type: {base_type}")
@@ -482,7 +527,9 @@ def _get_encoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         return f"ptr += {field_name}.encode(ptr, bufferSize - (ptr - buffer));"
 
 
-def _get_decoder_call(field_name: str, field_type: str, type_registry: TypeRegistry, direct_target: str | None = None) -> str:
+def _get_decoder_call(
+    field_name: str, field_type: str, type_registry: TypeRegistry, direct_target: str | None = None
+) -> str:
     """
     Generate decoder function call for decoding a field.
 
@@ -495,7 +542,7 @@ def _get_decoder_call(field_name: str, field_type: str, type_registry: TypeRegis
     Returns:
         C++ code line(s) calling appropriate decoder function
     """
-    base_type = field_type.split('[')[0]
+    base_type = field_type.split("[")[0]
 
     if not type_registry.is_atomic(base_type):
         raise ValueError(f"Unknown type: {base_type}")
@@ -507,7 +554,7 @@ def _get_decoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         decoder_name = f"decode{_capitalize_first(base_type)}"
         target = direct_target if direct_target else field_name
 
-        if base_type == 'string':
+        if base_type == "string":
             decoder_call = f"{decoder_name}<STRING_MAX_LENGTH>(ptr, remaining, {target})"
         else:
             decoder_call = f"{decoder_name}(ptr, remaining, {target})"
@@ -516,16 +563,18 @@ def _get_decoder_call(field_name: str, field_type: str, type_registry: TypeRegis
         if direct_target:
             return f"if (!{decoder_call}) return etl::nullopt;"
         else:
-            return f'''{cpp_type} {field_name};
-        if (!{decoder_call}) return etl::nullopt;'''
+            return f"""{cpp_type} {field_name};
+        if (!{decoder_call}) return etl::nullopt;"""
     else:
-        return f'''auto {field_name} = {base_type}::decode(ptr, remaining);
+        return f"""auto {field_name} = {base_type}::decode(ptr, remaining);
         if (!{field_name}) return etl::nullopt;
         ptr += {base_type}::MAX_PAYLOAD_SIZE;
-        remaining -= {base_type}::MAX_PAYLOAD_SIZE;'''
+        remaining -= {base_type}::MAX_PAYLOAD_SIZE;"""
 
 
-def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> int:
+def _calculate_max_payload_size(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int
+) -> int:
     """
     Calculate maximum payload size in bytes (7-bit encoded).
     Supports both primitive and composite fields.
@@ -552,7 +601,7 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
 
                 if atomic.is_builtin:
                     # Builtin type - use size_bytes from YAML
-                    if atomic.size_bytes == 'variable':
+                    if atomic.size_bytes == "variable":
                         # String: 1 byte length prefix + STRING_MAX_LENGTH chars
                         base_size = 1 + string_max_length  # From sysex_protocol_config.yaml
                     else:
@@ -567,7 +616,9 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
         else:  # Composite field
             assert isinstance(field, CompositeField)
             # Recursively calculate size of nested fields
-            nested_size = _calculate_max_payload_size(field.fields, type_registry, string_max_length)
+            nested_size = _calculate_max_payload_size(
+                field.fields, type_registry, string_max_length
+            )
 
             if field.array:
                 # Array of composites: count byte + (nested_size * array_size)
@@ -580,7 +631,9 @@ def _calculate_max_payload_size(fields: Sequence[FieldBase], type_registry: Type
     return total_size
 
 
-def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int) -> int:
+def _calculate_min_payload_size(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, string_max_length: int
+) -> int:
     """
     Calculate minimum payload size in bytes (7-bit encoded) with empty strings.
     Used for decode validation to allow variable-length messages.
@@ -608,7 +661,7 @@ def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: Type
 
                 if atomic.is_builtin:
                     # Builtin type - use size_bytes from YAML
-                    if atomic.size_bytes == 'variable':
+                    if atomic.size_bytes == "variable":
                         # String: 1 byte length prefix only (empty string)
                         base_size = 1
                     else:
@@ -623,7 +676,9 @@ def _calculate_min_payload_size(fields: Sequence[FieldBase], type_registry: Type
         else:  # Composite field
             assert isinstance(field, CompositeField)
             # Recursively calculate size of nested fields
-            nested_size = _calculate_min_payload_size(field.fields, type_registry, string_max_length)
+            nested_size = _calculate_min_payload_size(
+                field.fields, type_registry, string_max_length
+            )
 
             if field.array:
                 # Array of composites: count byte + (nested_size * array_size)
@@ -648,19 +703,19 @@ def _get_encoded_size(type_name: str, raw_size: int) -> int:
         Encoded size in bytes
     """
     # bool: 1 byte (0x00 or 0x01)
-    if type_name == 'bool':
+    if type_name == "bool":
         return 1
 
     # uint8, int8: 1 byte (no encoding)
-    if type_name in ('uint8', 'int8'):
+    if type_name in ("uint8", "int8"):
         return 1
 
     # uint16, int16: 2 → 3 bytes
-    if type_name in ('uint16', 'int16'):
+    if type_name in ("uint16", "int16"):
         return 3
 
     # uint32, int32, float32: 4 → 5 bytes
-    if type_name in ('uint32', 'int32', 'float32'):
+    if type_name in ("uint32", "int32", "float32"):
         return 5
 
     # Default: assume 7-bit encoding (size * 8 / 7, rounded up)
@@ -692,8 +747,8 @@ def _to_pascal_case(s: str) -> str:
     if not s:
         return s
     # Split by underscore and capitalize each word
-    words = s.split('_')
-    return ''.join(word.capitalize() for word in words)
+    words = s.split("_")
+    return "".join(word.capitalize() for word in words)
 
 
 def _field_to_pascal_case(field_name: str) -> str:
@@ -715,7 +770,10 @@ def _field_to_pascal_case(field_name: str) -> str:
 # COMPOSITE FIELD SUPPORT (Phase 2)
 # ============================================================================
 
-def _generate_composite_structs(fields: Sequence[FieldBase], type_registry: TypeRegistry, depth: int = 0) -> str:
+
+def _generate_composite_structs(
+    fields: Sequence[FieldBase], type_registry: TypeRegistry, depth: int = 0
+) -> str:
     """
     Recursively generate all composite struct definitions from fields.
     Returns empty string if no composites found.
@@ -752,12 +810,7 @@ def _generate_single_composite_struct(field: CompositeField, type_registry: Type
     # Generate include guard macro (PROTOCOL_<STRUCT_NAME>_HPP)
     guard_macro = f"PROTOCOL_{struct_name.upper()}_STRUCT"
 
-    lines = [
-        f"#ifndef {guard_macro}",
-        f"#define {guard_macro}",
-        "",
-        f"struct {struct_name} {{"
-    ]
+    lines = [f"#ifndef {guard_macro}", f"#define {guard_macro}", "", f"struct {struct_name} {{"]
 
     # Add member fields
     for nested_field in field.fields:
@@ -768,16 +821,22 @@ def _generate_single_composite_struct(field: CompositeField, type_registry: Type
             if nested_field.array:
                 # Use etl::vector for dynamic arrays, etl::array for fixed
                 if nested_field.dynamic:
-                    lines.append(f"    etl::vector<{base_type}, {nested_field.array}> {nested_field.name};")
+                    lines.append(
+                        f"    etl::vector<{base_type}, {nested_field.array}> {nested_field.name};"
+                    )
                 else:
-                    lines.append(f"    etl::array<{base_type}, {nested_field.array}> {nested_field.name};")
+                    lines.append(
+                        f"    etl::array<{base_type}, {nested_field.array}> {nested_field.name};"
+                    )
             else:
                 lines.append(f"    {base_type} {nested_field.name};")
         else:  # Nested composite
             assert isinstance(nested_field, CompositeField)
             nested_struct_name = _field_to_pascal_case(nested_field.name)
             if nested_field.array:
-                lines.append(f"    etl::array<{nested_struct_name}, {nested_field.array}> {nested_field.name};")
+                lines.append(
+                    f"    etl::array<{nested_struct_name}, {nested_field.array}> {nested_field.name};"
+                )
             else:
                 lines.append(f"    {nested_struct_name} {nested_field.name};")
 

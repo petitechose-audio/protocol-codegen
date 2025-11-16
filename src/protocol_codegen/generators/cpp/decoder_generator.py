@@ -22,10 +22,11 @@ Generated Output:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from protocol_codegen.core.loader import TypeRegistry, AtomicType
+    from pathlib import Path
+
+    from protocol_codegen.core.loader import AtomicType, TypeRegistry
 
 
 def generate_decoder_hpp(type_registry: TypeRegistry, output_path: Path) -> str:
@@ -62,7 +63,7 @@ def _generate_header(builtin_types: dict[str, AtomicType]) -> str:
     """Generate file header with includes and namespace."""
     type_list = ", ".join(builtin_types.keys())
 
-    return f'''/**
+    return f"""/**
  * Decoder.hpp - 7-bit MIDI-safe Decoder
  *
  * AUTO-GENERATED - DO NOT EDIT
@@ -103,7 +104,7 @@ namespace Protocol {{
 // Returns bool success, writes decoded value to output parameter
 // Output parameter pattern minimizes memory footprint (no optional overhead)
 // Returns false if insufficient data or invalid encoding
-'''
+"""
 
 
 def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
@@ -117,8 +118,8 @@ def _generate_decoders(builtin_types: dict[str, AtomicType]) -> str:
         if cpp_type is None:
             continue
 
-        if type_name == 'bool':
-            decoders.append(f'''
+        if type_name == "bool":
+            decoders.append(f"""
 /**
  * Decode bool (1 byte)
  * {desc}
@@ -132,10 +133,10 @@ static inline bool decodeBool(
     remaining -= 1;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'uint8':
-            decoders.append(f'''
+        elif type_name == "uint8":
+            decoders.append(f"""
 /**
  * Decode uint8 (1 byte)
  * {desc}
@@ -149,10 +150,10 @@ static inline bool decodeUint8(
     remaining -= 1;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'int8':
-            decoders.append(f'''
+        elif type_name == "int8":
+            decoders.append(f"""
 /**
  * Decode int8 (1 byte)
  * {desc}
@@ -166,10 +167,10 @@ static inline bool decodeInt8(
     remaining -= 1;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'uint16':
-            decoders.append(f'''
+        elif type_name == "uint16":
+            decoders.append(f"""
 /**
  * Decode uint16 (3 bytes → 2 bytes)
  * {desc}
@@ -186,10 +187,10 @@ static inline bool decodeUint16(
     remaining -= 3;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'int16':
-            decoders.append(f'''
+        elif type_name == "int16":
+            decoders.append(f"""
 /**
  * Decode int16 (3 bytes → 2 bytes)
  * {desc}
@@ -207,10 +208,10 @@ static inline bool decodeInt16(
     remaining -= 3;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'uint32':
-            decoders.append(f'''
+        elif type_name == "uint32":
+            decoders.append(f"""
 /**
  * Decode uint32 (5 bytes → 4 bytes)
  * {desc}
@@ -229,10 +230,10 @@ static inline bool decodeUint32(
     remaining -= 5;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'int32':
-            decoders.append(f'''
+        elif type_name == "int32":
+            decoders.append(f"""
 /**
  * Decode int32 (5 bytes → 4 bytes)
  * {desc}
@@ -252,10 +253,10 @@ static inline bool decodeInt32(
     remaining -= 5;
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'float32':
-            decoders.append(f'''
+        elif type_name == "float32":
+            decoders.append(f"""
 /**
  * Decode float32 (5 bytes → 4 bytes)
  * {desc}
@@ -276,10 +277,10 @@ static inline bool decodeFloat32(
     memcpy(&out, &bits, sizeof(float));  // Type-punning via memcpy (safe)
     return true;
 }}
-''')
+""")
 
-        elif type_name == 'string':
-            decoders.append(f'''
+        elif type_name == "string":
+            decoders.append(f"""
 /**
  * Decode string (variable length)
  * {desc}
@@ -305,13 +306,13 @@ static inline bool decodeString(
     remaining -= len;
     return true;
 }}
-''')
+""")
 
     return "\n".join(decoders)
 
 
 def _generate_footer() -> str:
     """Generate namespace closing and file footer."""
-    return '''
+    return """
 }  // namespace Protocol
-'''
+"""

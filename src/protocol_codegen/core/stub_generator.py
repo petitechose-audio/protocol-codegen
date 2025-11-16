@@ -15,15 +15,15 @@ Usage:
     python generate_type_stubs.py
 """
 
-import sys
 import dataclasses
+import sys
 from pathlib import Path
 
 # Add parent directory to path so we can import protocol as a module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from protocol_codegen.core.field import CompositeField, PrimitiveField
 from protocol_codegen.core.loader import TypeRegistry
-from protocol_codegen.core.field import PrimitiveField, CompositeField
 from protocol_codegen.core.message import Message
 
 
@@ -31,10 +31,10 @@ def _format_type_annotation(type_hint: object) -> str:
     """Format type annotation for stub file."""
     type_str = str(type_hint)
     # Clean up type string
-    type_str = type_str.replace('typing.', '').replace('<class \'', '').replace('\'>', '')
-    type_str = type_str.replace('protocol.field.', '').replace('protocol.message.', '')
-    if 'Type' in type_str and 'Optional' not in type_str and 'Sequence' not in type_str:
-        return 'Type'
+    type_str = type_str.replace("typing.", "").replace("<class '", "").replace("'>", "")
+    type_str = type_str.replace("protocol.field.", "").replace("protocol.message.", "")
+    if "Type" in type_str and "Optional" not in type_str and "Sequence" not in type_str:
+        return "Type"
     return type_str
 
 
@@ -45,7 +45,7 @@ def _format_default(default_val: object) -> str:
     elif isinstance(default_val, bool):
         return str(default_val)
     elif default_val is None:
-        return 'None'
+        return "None"
     else:
         return repr(default_val)
 
@@ -57,18 +57,18 @@ def _generate_dataclass_stub(cls: type, class_name: str) -> str:
 
     # Get class docstring
     doc = cls.__doc__ or f"{class_name} class"
-    doc_lines = [line.strip() for line in doc.strip().split('\n')]
+    doc_lines = [line.strip() for line in doc.strip().split("\n")]
 
     # Start stub definition
-    stub = f'@dataclass\nclass {class_name}'
+    stub = f"@dataclass\nclass {class_name}"
 
     # Add base classes if any
-    if hasattr(cls, '__bases__') and cls.__bases__ and cls.__bases__[0] != object:
-        bases = ', '.join(base.__name__ for base in cls.__bases__ if base != object)
+    if hasattr(cls, "__bases__") and cls.__bases__ and cls.__bases__[0] is not object:
+        bases = ", ".join(base.__name__ for base in cls.__bases__ if base is not object)
         if bases:
-            stub += f'({bases})'
+            stub += f"({bases})"
 
-    stub += ':\n'
+    stub += ":\n"
 
     # Add docstring
     if len(doc_lines) == 1:
@@ -76,7 +76,7 @@ def _generate_dataclass_stub(cls: type, class_name: str) -> str:
     else:
         stub += '    """\n'
         for line in doc_lines:
-            stub += f'    {line}\n'
+            stub += f"    {line}\n"
         stub += '    """\n'
 
     # Add field definitions from actual dataclass fields
@@ -84,18 +84,19 @@ def _generate_dataclass_stub(cls: type, class_name: str) -> str:
         type_str = _format_type_annotation(field.type)
         if field.default != dataclasses.MISSING:
             default_str = _format_default(field.default)
-            stub += f'    {field.name}: {type_str} = {default_str}\n'
+            stub += f"    {field.name}: {type_str} = {default_str}\n"
         elif field.default_factory != dataclasses.MISSING:
-            stub += f'    {field.name}: {type_str}\n'
+            stub += f"    {field.name}: {type_str}\n"
         else:
-            stub += f'    {field.name}: {type_str}\n'
+            stub += f"    {field.name}: {type_str}\n"
 
     # Add method stubs for methods defined directly on this class (not inherited)
     # This includes abstract method implementations from FieldBase
     import inspect
+
     for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
         # Skip private methods except __str__ and __post_init__
-        if name.startswith('_') and name not in ('__str__', '__post_init__'):
+        if name.startswith("_") and name not in ("__str__", "__post_init__"):
             continue
         # Only include methods defined on this class (not inherited from base)
         if name in cls.__dict__:
@@ -104,32 +105,32 @@ def _generate_dataclass_stub(cls: type, class_name: str) -> str:
             # Format parameters with type hints
             params: list[str] = []
             for param_name, param in sig.parameters.items():
-                if param_name == 'self':
+                if param_name == "self":
                     continue
                 if param.annotation != inspect.Parameter.empty:
                     type_hint = _format_type_annotation(param.annotation)
                     if param.default != inspect.Parameter.empty:
                         default = _format_default(param.default)
-                        params.append(f'{param_name}: {type_hint} = {default}')
+                        params.append(f"{param_name}: {type_hint} = {default}")
                     else:
-                        params.append(f'{param_name}: {type_hint}')
+                        params.append(f"{param_name}: {type_hint}")
                 else:
                     # No annotation - use object as fallback
                     if param.default != inspect.Parameter.empty:
                         default = _format_default(param.default)
-                        params.append(f'{param_name}: object = {default}')
+                        params.append(f"{param_name}: object = {default}")
                     else:
-                        params.append(f'{param_name}: object')
+                        params.append(f"{param_name}: object")
 
-            params_str = ', '.join(params)
+            params_str = ", ".join(params)
 
             # Format return type
             if sig.return_annotation != inspect.Signature.empty:
                 return_type = _format_type_annotation(sig.return_annotation)
             else:
-                return_type = '...'
+                return_type = "..."
 
-            stub += f'    def {name}(self{", " + params_str if params_str else ""}) -> {return_type}: ...\n'
+            stub += f"    def {name}(self{', ' + params_str if params_str else ''}) -> {return_type}: ...\n"
 
     return stub
 
@@ -144,7 +145,7 @@ def generate_stub_file() -> None:
     # Resolve paths
     script_dir = Path(__file__).parent
 
-    print(f"Loading builtin types from builtin_types.py...")
+    print("Loading builtin types from builtin_types.py...")
     registry = TypeRegistry()
     registry.load_builtins()  # No arguments - loads from Python config
 
@@ -153,7 +154,7 @@ def generate_stub_file() -> None:
     print(f"  Found {len(builtin_types)} builtin types")
 
     # Generate stub file content
-    stub_content = f'''"""
+    stub_content = '''"""
 Type stubs for field.py
 
 This file provides type hints for Pylance/Pyright to enable autocomplete
@@ -182,7 +183,7 @@ class Type(str, Enum):
 
     # Add builtin type enum members
     for type_name in sorted(builtin_types):
-        member_name = type_name.upper().replace('-', '_')
+        member_name = type_name.upper().replace("-", "_")
         stub_content += f'    {member_name} = "{type_name}"\n'
 
     stub_content += '''
@@ -231,24 +232,24 @@ def populate_type_names(type_names: list[str]) -> None:
 '''
 
     # Generate PrimitiveField stub from actual class using introspection
-    stub_content += _generate_dataclass_stub(PrimitiveField, 'PrimitiveField')
-    stub_content += '\n\n'
+    stub_content += _generate_dataclass_stub(PrimitiveField, "PrimitiveField")
+    stub_content += "\n\n"
 
     # Generate CompositeField stub from actual class using introspection
-    stub_content += _generate_dataclass_stub(CompositeField, 'CompositeField')
-    stub_content += '\n\n'
+    stub_content += _generate_dataclass_stub(CompositeField, "CompositeField")
+    stub_content += "\n\n"
 
     # Generate Message stub from actual class using introspection
-    stub_content += _generate_dataclass_stub(Message, 'Message')
-    stub_content += '\n'
+    stub_content += _generate_dataclass_stub(Message, "Message")
+    stub_content += "\n"
 
     # Write stub file
     stub_path = script_dir / "field.pyi"
-    stub_path.write_text(stub_content, encoding='utf-8')
+    stub_path.write_text(stub_content, encoding="utf-8")
 
     print(f"\n[OK] Generated {stub_path}")
     print(f"     Total: {len(builtin_types)} builtin types")
-    print(f"     Classes: PrimitiveField, CompositeField, Message (via introspection)")
+    print("     Classes: PrimitiveField, CompositeField, Message (via introspection)")
 
 
 def main():

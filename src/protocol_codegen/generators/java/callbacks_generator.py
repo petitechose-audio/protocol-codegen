@@ -8,13 +8,16 @@ Protocol extends this and users assign callbacks.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from pathlib import Path
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from protocol_codegen.core.message import Message
 
 
-def generate_protocol_callbacks_java(messages: list[Message], package: str, output_path: Path) -> str:
+def generate_protocol_callbacks_java(
+    messages: list[Message], package: str, output_path: Path
+) -> str:
     """
     Generate ProtocolCallbacks.java.
 
@@ -30,17 +33,17 @@ def generate_protocol_callbacks_java(messages: list[Message], package: str, outp
     callbacks: list[str] = []
     for message in messages:
         # Convert SCREAMING_SNAKE_CASE to PascalCase
-        pascal_name = ''.join(word.capitalize() for word in message.name.split('_'))
+        pascal_name = "".join(word.capitalize() for word in message.name.split("_"))
         class_name = f"{pascal_name}Message"
 
         # Callback name: onTransportPlay, onParameterSet, etc.
         callback_name = f"on{pascal_name}"
 
-        callbacks.append(f'    public MessageHandler<{class_name}> {callback_name};')
+        callbacks.append(f"    public MessageHandler<{class_name}> {callback_name};")
 
-    callbacks_str = '\n'.join(callbacks)
+    callbacks_str = "\n".join(callbacks)
 
-    code = f'''package {package}.protocol;
+    code = f"""package {package}.protocol;
 
 import {package}.protocol.struct.*;
 
@@ -75,10 +78,10 @@ public class ProtocolCallbacks {{
 
     protected ProtocolCallbacks() {{}}
 }}
-'''
+"""
 
     # Write to file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(code, encoding='utf-8')
+    output_path.write_text(code, encoding="utf-8")
 
     return code

@@ -16,10 +16,12 @@ Single Responsibility: Represent a single field with its name, type, and structu
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Union
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class Type(str, Enum):
@@ -39,6 +41,7 @@ class Type(str, Enum):
     Note: This enum is populated by __init__.py on module import.
     The enum members are created dynamically from Python configuration.
     """
+
     pass
 
 
@@ -65,7 +68,7 @@ def populate_type_names(type_names: list[str]) -> None:
     # Add each type as an enum member
     for type_name in type_names:
         # Convert to SCREAMING_SNAKE_CASE for enum member name
-        member_name = type_name.upper().replace('-', '_')
+        member_name = type_name.upper().replace("-", "_")
         # Create enum member with original type name as value
         # Use str.__new__ because Type inherits from str
         member = str.__new__(Type, type_name)
@@ -83,6 +86,7 @@ def populate_type_names(type_names: list[str]) -> None:
 # Field Base Class (Abstract)
 # ============================================================================
 
+
 class FieldBase(ABC):
     """
     Abstract base class for all field types.
@@ -90,8 +94,9 @@ class FieldBase(ABC):
     Defines the common interface that all fields must implement.
     Not a dataclass itself to avoid field ordering conflicts in subclasses.
     """
+
     name: str
-    array: Optional[int]
+    array: int | None
 
     @abstractmethod
     def is_primitive(self) -> bool:
@@ -122,6 +127,7 @@ class FieldBase(ABC):
 # Primitive Field (Type-Safe)
 # ============================================================================
 
+
 @dataclass
 class PrimitiveField(FieldBase):
     """
@@ -141,9 +147,10 @@ class PrimitiveField(FieldBase):
         >>> PrimitiveField('colors', type_name=Type.UINT8, array=8)
         >>> PrimitiveField('names', type_name=Type.STRING, array=32, dynamic=True)  # etl::vector
     """
+
     name: str
     type_name: Type
-    array: Optional[int] = None
+    array: int | None = None
     dynamic: bool = False
 
     def __post_init__(self) -> None:
@@ -151,7 +158,9 @@ class PrimitiveField(FieldBase):
         if self.array is not None and self.array <= 0:
             raise ValueError(f"Array size must be positive, got {self.array}")
         if self.dynamic and self.array is None:
-            raise ValueError(f"Field '{self.name}': dynamic=True requires array size to be specified")
+            raise ValueError(
+                f"Field '{self.name}': dynamic=True requires array size to be specified"
+            )
 
     def is_primitive(self) -> bool:
         """Primitive fields always return True"""
@@ -164,9 +173,7 @@ class PrimitiveField(FieldBase):
     def validate_depth(self, max_depth: int = 3, current_depth: int = 0) -> None:
         """Primitive fields have no depth"""
         if current_depth > max_depth:
-            raise ValueError(
-                f"Field '{self.name}' exceeds maximum nesting depth of {max_depth}"
-            )
+            raise ValueError(f"Field '{self.name}' exceeds maximum nesting depth of {max_depth}")
 
     def __str__(self) -> str:
         """String representation"""
@@ -179,6 +186,7 @@ class PrimitiveField(FieldBase):
 # ============================================================================
 # Composite Field (Type-Safe)
 # ============================================================================
+
 
 @dataclass
 class CompositeField(FieldBase):
@@ -199,14 +207,15 @@ class CompositeField(FieldBase):
         ...     PrimitiveField('value', type_name=Type.FLOAT32)
         ... ])
     """
+
     name: str
     fields: Sequence[FieldBase]
-    array: Optional[int] = None
+    array: int | None = None
 
     def __post_init__(self) -> None:
         """Validate composite field and convert to list if needed"""
         # Convert to list for internal storage
-        object.__setattr__(self, 'fields', list(self.fields))
+        object.__setattr__(self, "fields", list(self.fields))
 
         if not self.fields:
             raise ValueError(f"CompositeField '{self.name}' must have at least one field")
@@ -261,7 +270,7 @@ class CompositeField(FieldBase):
 # ============================================================================
 
 # Type alias for functions that accept either PrimitiveField or CompositeField
-FieldType = Union[PrimitiveField, CompositeField]
+FieldType = PrimitiveField | CompositeField
 
 
 # ============================================================================

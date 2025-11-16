@@ -16,12 +16,13 @@ DRY Principle: Centralized type management, no duplication.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 try:
-    from .types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef
+    from .types import BUILTIN_TYPES as _BUILTIN_TYPES
 except ImportError:
-    from .types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef  # type: ignore[import-not-found]
+    from .types import BUILTIN_TYPES as _BUILTIN_TYPES  # type: ignore[import-not-found]
 
 BUILTIN_TYPES = _BUILTIN_TYPES
 
@@ -50,8 +51,8 @@ class AtomicType:
     fields: list[tuple[str, str]]  # [(field_name, field_type_with_array)]
     is_builtin: bool = False
     size_bytes: int | str | None = None  # int or 'variable' for builtins
-    cpp_type: str | None = None          # For builtins
-    java_type: str | None = None         # For builtins
+    cpp_type: str | None = None  # For builtins
+    java_type: str | None = None  # For builtins
 
     def __str__(self) -> str:
         """String representation for debugging"""
@@ -96,15 +97,10 @@ class TypeRegistry:
                 is_builtin=True,
                 size_bytes=builtin_def.size_bytes,
                 cpp_type=builtin_def.cpp_type,
-                java_type=builtin_def.java_type
+                java_type=builtin_def.java_type,
             )
 
-    def add_custom_type(
-        self,
-        name: str,
-        description: str,
-        fields: list[tuple[str, str]]
-    ) -> None:
+    def add_custom_type(self, name: str, description: str, fields: list[tuple[str, str]]) -> None:
         """
         Add a custom atomic type programmatically.
 
@@ -124,10 +120,7 @@ class TypeRegistry:
             ... )
         """
         self.types[name] = AtomicType(
-            name=name,
-            description=description,
-            fields=fields,
-            is_builtin=False
+            name=name, description=description, fields=fields, is_builtin=False
         )
 
     def validate_references(self):
@@ -150,7 +143,7 @@ class TypeRegistry:
 
             for field_name, field_type in atomic_type.fields:
                 # Handle array notation: "uint8[8]" -> "uint8"
-                base_type = field_type.split('[')[0]
+                base_type = field_type.split("[")[0]
 
                 if not self.is_atomic(base_type):
                     self._errors.append(
