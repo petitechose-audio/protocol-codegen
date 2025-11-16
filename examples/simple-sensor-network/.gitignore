@@ -1,0 +1,7 @@
+# Generated code - do not commit
+generated/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
