@@ -17,7 +17,7 @@ Separation of Concerns:
 
 from typing import List
 from .message import Message
-from .type_loader import TypeRegistry
+from .loader import TypeRegistry
 from .field import FieldBase, PrimitiveField, CompositeField
 
 

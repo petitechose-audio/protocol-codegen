@@ -19,11 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 try:
-    from .builtin_types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef
+    from .types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef
 except ImportError:
-    from builtin_types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef  # type: ignore[import-not-found]
+    from .types import BUILTIN_TYPES as _BUILTIN_TYPES, BuiltinTypeDef  # type: ignore[import-not-found]
 
-BUILTIN_TYPES: dict[str, BuiltinTypeDef] = dict[str, BuiltinTypeDef], _BUILTIN_TYPES
+BUILTIN_TYPES = _BUILTIN_TYPES
 
 
 @dataclass

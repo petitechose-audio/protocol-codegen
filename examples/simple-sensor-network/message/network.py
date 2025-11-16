@@ -1,4 +1,4 @@
-from protocol import Message
+from protocol import Message, PrimitiveField, CompositeField, Type
 from ..field.network import *
 
 # ============================================================================
