@@ -6,9 +6,11 @@ Demonstrates protocol-codegen with nested composite types for a sensor network.
 
 ```bash
 # Install protocol-codegen (from project root)
-pip install -e .
+cd ../..
+uv sync
 
 # Generate code
+cd examples/simple-sensor-network
 ./generate.sh  # or generate.bat on Windows
 ```
 

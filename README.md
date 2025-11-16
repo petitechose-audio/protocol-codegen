@@ -15,12 +15,31 @@ Generate type-safe protocol code (C++, Java) from Python message definitions.
 - **Auto ID allocation** - Sequential message IDs
 - **Validation** - Strict message validation
 
+## Prerequisites
+
+- **Python 3.13+** - [Download](https://www.python.org/downloads/)
+- **uv** - Fast Python package manager ([Installation](https://github.com/astral-sh/uv))
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
+# Or: pip install uv                               # Windows/any platform
+```
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/petitechose-audio/protocol-codegen.git
+cd protocol-codegen
+
+# Install dependencies and package
+uv sync
+```
+
 ## Quick Start
 
 ```bash
-# Install
-pip install -e .
-
 # Generate from example
 cd examples/simple-sensor-network
 ./generate.sh
@@ -139,18 +158,28 @@ See `examples/simple-sensor-network/` for a complete example with:
 
 ## Development
 
-### Setup
+### Setup Development Environment
 
 ```bash
-# Sync dependencies
+# Install package with development dependencies
 uv sync --extra dev
+
+# Verify installation
+make all
 ```
+
+### Development Dependencies
+
+The `dev` extra includes:
+- **ruff** - Fast linter and formatter
+- **pyright** - Static type checker (strict mode)
+- **types-click** - Type stubs for Click
 
 ### Available Commands
 
 ```bash
 make help          # Show all available commands
-make sync          # Sync all dependencies
+make sync          # Sync all dependencies (including dev)
 make format        # Format code with ruff
 make lint          # Lint code with ruff
 make type-check    # Type check with pyright
@@ -163,9 +192,19 @@ make clean         # Clean build artifacts
 
 ```bash
 # Make changes to code
-make format        # Auto-format
-make all           # Verify everything passes
+make format        # Auto-format code
+make all           # Verify all checks pass
+
+# Run CLI during development
+uv run protocol-codegen --help
 ```
+
+### Code Quality Standards
+
+All code must pass:
+- ✅ **Ruff** - Zero linting errors, formatted code
+- ✅ **Pyright** - Zero type errors in strict mode
+- ✅ **Imports** - Sorted and organized
 
 ## License
 
