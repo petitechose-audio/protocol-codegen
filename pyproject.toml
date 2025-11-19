@@ -1,7 +1,7 @@
 [project]
 name = "protocol-codegen"
 version = "1.0.0"
-description = "Generic bidirectional protocol code generator"
+description = "Type-safe protocol code generator for C++ and Java"
 requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.0.0",

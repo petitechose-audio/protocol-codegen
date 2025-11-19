@@ -160,89 +160,14 @@ class SysExLimits(BaseModel):
         extra = "forbid"
 
 
-class MessageIDRange(BaseModel):
-    """MessageID allocation range for a Flow direction."""
-
-    start: int = Field(ge=0x00, le=0xFF, description="Range start (inclusive)")
-    end: int = Field(ge=0x00, le=0xFF, description="Range end (inclusive)")
-
-    @field_validator("end")
-    @classmethod
-    def end_after_start(cls, v: int, info: Any) -> int:
-        """Ensure range end is after start."""
-        start: int | None = info.data.get("start")
-        if start is not None and v < start:
-            raise ValueError(f"Range end ({v}) must be >= start ({start})")
-        return v
-
-    @property
-    def slots(self) -> int:
-        """Number of available slots in this range."""
-        return self.end - self.start + 1
-
-    class Config:
-        validate_assignment = True
-        extra = "forbid"
-
-
-class MessageIDRanges(BaseModel):
-    """MessageID allocation ranges by Flow direction."""
-
-    controller_to_host: MessageIDRange = Field(
-        default=MessageIDRange(start=0x00, end=0x3F),
-        description="Controller→Host messages (hardware actions)",
-    )
-
-    host_to_controller: MessageIDRange = Field(
-        default=MessageIDRange(start=0x40, end=0xBF),
-        description="Host→Controller messages (DAW feedback)",
-    )
-
-    bidirectional: MessageIDRange = Field(
-        default=MessageIDRange(start=0xC0, end=0xC7),
-        description="Bidirectional messages (ping, handshake, diagnostics)",
-    )
-
-    class Config:
-        validate_assignment = True
-        extra = "forbid"
-
-
-class ProtocolRoles(BaseModel):
-    """
-    Protocol role configuration.
-
-    Defines which code (cpp/java) acts as host vs controller.
-    This determines the fromHost flag value when encoding messages.
-    """
-
-    cpp: str = Field(default="controller", description="Role for C++ code (controller or host)")
-
-    java: str = Field(default="host", description="Role for Java code (controller or host)")
-
-    @field_validator("cpp", "java")
-    @classmethod
-    def validate_role(cls, v: str) -> str:
-        """Ensure role is either 'host' or 'controller'."""
-        if v not in ["host", "controller"]:
-            raise ValueError(f"Role must be 'host' or 'controller', got '{v}'")
-        return v
-
-    class Config:
-        validate_assignment = True
-        extra = "forbid"
-
-
 class SysExConfig(BaseModel):
     """
     Complete SysEx protocol configuration.
 
-    Top-level configuration container with five main sections:
+    Top-level configuration container with three main sections:
     - framing: SysEx message delimiters and IDs
     - structure: Message byte offsets
     - limits: Encoding size constraints
-    - message_id_ranges: MessageID allocation by Flow direction
-    - roles: Host/controller role assignment per language
 
     Usage:
         >>> config = SysExConfig()  # Use builtin defaults
@@ -258,14 +183,6 @@ class SysExConfig(BaseModel):
     )
 
     limits: SysExLimits = Field(default=SysExLimits(), description="Protocol encoding limits")
-
-    message_id_ranges: MessageIDRanges = Field(
-        default=MessageIDRanges(), description="MessageID allocation ranges by Flow direction"
-    )
-
-    roles: ProtocolRoles = Field(
-        default=ProtocolRoles(), description="Host/controller role assignment per language"
-    )
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -292,10 +209,6 @@ class SysExConfig(BaseModel):
                 "array_max_items": self.limits.array_max_items,
                 "max_payload_size": self.limits.max_payload_size,
                 "max_message_size": self.limits.max_message_size,
-            },
-            "roles": {
-                "cpp": self.roles.cpp,
-                "java": self.roles.java,
             },
         }
 

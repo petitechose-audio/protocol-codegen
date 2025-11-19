@@ -9,11 +9,11 @@ Generate type-safe protocol code (C++, Java) from Python message definitions.
 
 ## Features
 
-- **SysEx protocol** - MIDI System Exclusive
+- **SysEx protocol** - MIDI System Exclusive messages
 - **Type-safe** - Compile-time error detection
-- **Bidirectional** - C++ ↔ Java communication
+- **Cross-platform** - C++ ↔ Java code generation
 - **Auto ID allocation** - Sequential message IDs
-- **Validation** - Strict message validation
+- **Validation** - Strict type validation
 
 ## Prerequisites
 

@@ -64,10 +64,6 @@ def _convert_sysex_config_to_cpp_protocol_config(config: SysExConfig) -> CppProt
             "max_payload_size": config.limits.max_payload_size,
             "max_message_size": config.limits.max_message_size,
         },
-        roles={
-            "cpp": "controller",
-            "java": "host",
-        },
     )
 
 
@@ -89,15 +85,6 @@ def _convert_sysex_config_to_java_protocol_config(config: SysExConfig) -> JavaPr
             "array_max_items": config.limits.array_max_items,
             "max_payload_size": config.limits.max_payload_size,
             "max_message_size": config.limits.max_message_size,
-        },
-        roles={
-            "cpp": "controller",
-            "java": "host",
-        },
-        message_id_ranges={
-            "controller_to_host": {"start": 0, "end": 63},
-            "host_to_controller": {"start": 64, "end": 191},
-            "bidirectional": {"start": 192, "end": 255},
         },
     )
 
@@ -218,7 +205,7 @@ def _generate_cpp(
     allocations: dict[str, int],
     registry: TypeRegistry,
     protocol_config: SysExConfig,
-    plugin_paths: dict[str, dict[str, str]],
+    plugin_paths: PluginPathsConfig,
     output_base: Path,
     verbose: bool,
 ) -> None:
@@ -284,7 +271,7 @@ def _generate_java(
     allocations: dict[str, int],
     registry: TypeRegistry,
     protocol_config: SysExConfig,
-    plugin_paths: dict[str, dict[str, str]],
+    plugin_paths: PluginPathsConfig,
     output_base: Path,
     verbose: bool,
 ) -> None:

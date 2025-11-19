@@ -7,15 +7,7 @@ No YAML - everything defined in Python with strong typing.
 This replaces sysex_protocol_config.yaml with pure Python configuration.
 """
 
-from .config import (
-    MessageIDRange,
-    MessageIDRanges,
-    ProtocolRoles,
-    SysExConfig,
-    SysExFraming,
-    SysExLimits,
-    SysExStructure,
-)
+from .config import SysExConfig, SysExFraming, SysExLimits, SysExStructure
 
 # Default configuration instance
 BUILTIN_SYSEX_CONFIG = SysExConfig(
@@ -32,18 +24,9 @@ BUILTIN_SYSEX_CONFIG = SysExConfig(
         payload_offset=5,  # After from_host flag
     ),
     limits=SysExLimits(
-        string_max_length=16,  # Max string length: 16 caractères
-        array_max_items=32,  # Max array size: 32 éléments
+        string_max_length=16,  # Max string length: 16 chars
+        array_max_items=32,  # Max array size: 32 items
         max_payload_size=128,  # Max payload bytes
         max_message_size=256,  # Max total message size
-    ),
-    message_id_ranges=MessageIDRanges(
-        controller_to_host=MessageIDRange(start=0x00, end=0x3F),
-        host_to_controller=MessageIDRange(start=0x40, end=0xBF),
-        bidirectional=MessageIDRange(start=0xC0, end=0xC7),
-    ),
-    roles=ProtocolRoles(
-        cpp="controller",  # C++ acts as controller (hardware)
-        java="host",  # Java acts as host (DAW)
     ),
 )

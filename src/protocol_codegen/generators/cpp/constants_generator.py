@@ -50,21 +50,11 @@ class LimitsConfig(TypedDict, total=False):
     max_message_size: int
 
 
-class RolesConfig(TypedDict, total=False):
-    """Role configuration for each platform"""
-
-    cpp: str
-    java: str
-    python: str
-
-
 class ProtocolConfig(TypedDict, total=False):
     """Protocol configuration structure from protocol_config.yaml"""
 
     sysex: SysExConfig
     limits: LimitsConfig
-    roles: RolesConfig
-    message_id_start: int
 
 
 def generate_constants_hpp(
@@ -98,10 +88,9 @@ def generate_constants_hpp(
     header = _generate_header()
     sysex_constants = _generate_sysex_constants(protocol_config.get("sysex", {}), uint8_cpp)
     limits = _generate_limits(protocol_config.get("limits", {}), uint8_cpp, uint16_cpp)
-    role_constants = _generate_role_constants(protocol_config.get("roles", {}))
     footer = _generate_footer()
 
-    full_code = f"{header}\n{sysex_constants}\n{limits}\n{role_constants}\n{footer}"
+    full_code = f"{header}\n{sysex_constants}\n{limits}\n{footer}"
     return full_code
 
 
@@ -211,27 +200,6 @@ def _generate_limits(limits_config: LimitsConfig, uint8_type: str, uint16_type: 
     lines.append(
         f"constexpr {uint16_type} MAX_MESSAGE_SIZE = {max_message};    // Max total message bytes"
     )
-
-    return "\n".join(lines)
-
-
-def _generate_role_constants(roles_config: RolesConfig) -> str:
-    """Generate role constants (IS_HOST flag for protocol direction)."""
-    if not roles_config:
-        # Default: C++ is controller
-        is_host: bool = False
-    else:
-        cpp_role: str = roles_config.get("cpp", "controller")
-        is_host: bool = cpp_role == "host"
-
-    lines: list[str] = [
-        "",
-        "// ============================================================================",
-        "// ROLE CONFIGURATION",
-        "// ============================================================================",
-        "",
-        f"constexpr bool IS_HOST = {'true' if is_host else 'false'};  // This code's role in the protocol",
-    ]
 
     return "\n".join(lines)
 
