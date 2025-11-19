@@ -257,8 +257,8 @@ def _generate_cpp(
     )
     files_generated.append("MessageID.hpp")
 
-    # Generate struct files
-    cpp_struct_dir = output_base / plugin_paths["output_cpp"]["structs"]
+    # Generate struct files (structs path is relative to base_path)
+    cpp_struct_dir = cpp_base / plugin_paths["output_cpp"]["structs"]
     cpp_struct_dir.mkdir(parents=True, exist_ok=True)
 
     for message in messages:
@@ -327,8 +327,8 @@ def _generate_java(
     )
     files_generated.append("MessageID.java")
 
-    # Generate struct files
-    java_struct_dir = output_base / plugin_paths["output_java"]["structs"]
+    # Generate struct files (structs path is relative to base_path)
+    java_struct_dir = java_base / plugin_paths["output_java"]["structs"]
     java_struct_dir.mkdir(parents=True, exist_ok=True)
 
     for message in messages:
