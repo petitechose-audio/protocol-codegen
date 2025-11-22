@@ -27,6 +27,7 @@ from protocol_codegen.core.validator import ProtocolValidator
 from protocol_codegen.generators.cpp.constants_generator import ProtocolConfig as CppProtocolConfig
 from protocol_codegen.generators.cpp.constants_generator import generate_constants_hpp
 from protocol_codegen.generators.cpp.decoder_generator import generate_decoder_hpp
+from protocol_codegen.generators.cpp.decoder_registry_generator import generate_decoder_registry_hpp
 from protocol_codegen.generators.cpp.encoder_generator import generate_encoder_hpp
 from protocol_codegen.generators.cpp.logger_generator import generate_logger_hpp
 from protocol_codegen.generators.cpp.messageid_generator import generate_messageid_hpp
@@ -262,6 +263,13 @@ def _generate_cpp(
         encoding="utf-8",
     )
     files_generated.append("ProtocolCallbacks.hpp")
+
+    cpp_decoder_registry_path = cpp_base / "DecoderRegistry.hpp"
+    cpp_decoder_registry_path.write_text(
+        generate_decoder_registry_hpp(messages, cpp_decoder_registry_path),
+        encoding="utf-8",
+    )
+    files_generated.append("DecoderRegistry.hpp")
 
     # Generate struct files (structs path is relative to base_path)
     cpp_struct_dir = cpp_base / plugin_paths["output_cpp"]["structs"]
