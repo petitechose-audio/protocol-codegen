@@ -184,7 +184,8 @@ def _generate_field_declarations(fields: Sequence[FieldBase], type_registry: Typ
             field_type_name = field.type_name.value
             java_type = _get_java_type(field_type_name, type_registry)
             if field.is_array():
-                lines.append(f"    private final List<{java_type}> {field.name};")
+                boxed_type = _get_boxed_java_type(java_type)
+                lines.append(f"    private final List<{boxed_type}> {field.name};")
             else:
                 lines.append(f"    private final {java_type} {field.name};")
         else:  # Composite
@@ -228,7 +229,8 @@ def _generate_constructor(
             field_type_name = field.type_name.value
             java_type = _get_java_type(field_type_name, type_registry)
             if field.is_array():
-                params.append(f"List<{java_type}> {field.name}")
+                boxed_type = _get_boxed_java_type(java_type)
+                params.append(f"List<{boxed_type}> {field.name}")
             else:
                 params.append(f"{java_type} {field.name}")
         else:  # Composite
@@ -268,7 +270,8 @@ def _generate_getters(fields: Sequence[FieldBase], type_registry: TypeRegistry) 
             field_type_name = field.type_name.value
             java_type = _get_java_type(field_type_name, type_registry)
             if field.is_array():
-                java_type = f"List<{java_type}>"
+                boxed_type = _get_boxed_java_type(java_type)
+                java_type = f"List<{boxed_type}>"
         else:  # Composite
             class_name = _field_to_pascal_case(field.name)
             java_type = f"List<{class_name}>" if field.array else class_name
@@ -466,10 +469,11 @@ def _generate_decode_method(
             java_type = _get_java_type(field_type_name, type_registry)
             if field.is_array():
                 # Primitive array (e.g., List<String>)
+                boxed_type = _get_boxed_java_type(java_type)
                 lines.append(f"        int count_{field.name} = Decoder.decodeUint8(data, offset);")
                 lines.append("        offset += 1;")
                 lines.append("")
-                lines.append(f"        List<{java_type}> {field.name}_list = new ArrayList<>();")
+                lines.append(f"        List<{boxed_type}> {field.name}_list = new ArrayList<>();")
                 lines.append(f"        for (int i = 0; i < count_{field.name}; i++) {{")
                 decoder_call = _get_decoder_call(
                     f"item_{field.name}", field_type_name, java_type, type_registry
@@ -588,6 +592,32 @@ def _generate_decode_method(
 def _generate_footer() -> str:
     """Generate class closing."""
     return "}  // class Message\n"
+
+
+def _get_boxed_java_type(java_type: str) -> str:
+    """
+    Convert primitive Java type to its boxed equivalent for use in generics.
+
+    Java generics don't support primitive types, so List<int> is invalid.
+    Must use List<Integer> instead.
+
+    Args:
+        java_type: Primitive or reference Java type
+
+    Returns:
+        Boxed type for primitives, unchanged for reference types
+    """
+    boxed_types = {
+        "int": "Integer",
+        "byte": "Byte",
+        "short": "Short",
+        "long": "Long",
+        "float": "Float",
+        "double": "Double",
+        "boolean": "Boolean",
+        "char": "Character",
+    }
+    return boxed_types.get(java_type, java_type)
 
 
 def _get_java_type(field_type: str, type_registry: TypeRegistry) -> str:
