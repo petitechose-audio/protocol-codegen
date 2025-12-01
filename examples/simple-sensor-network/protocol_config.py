@@ -13,8 +13,7 @@ PROTOCOL_CONFIG = SysExConfig(
         device_id=0x42,  # Custom device ID
     ),
     limits=SysExLimits(
+        # string_max_length and array_max_items use protocol defaults (127)
         max_message_size=512,  # Maximum SysEx message size
-        string_max_length=32,  # Maximum string length
-        array_max_items=32,  # Maximum array size
     ),
 )

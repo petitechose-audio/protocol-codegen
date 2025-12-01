@@ -10,7 +10,7 @@ Key Features:
 - 7-bit decoding for multi-byte types (5 bytes → float32)
 - Static inline functions (zero runtime overhead)
 - Auto-generated from builtin_types.yaml (perfect consistency)
-- ETL optional for safe error handling
+- std::optional for safe error handling
 - Separate from Encoder.hpp for clarity (SysEx → Type)
 
 Generated Output:
@@ -93,8 +93,7 @@ def _generate_header(builtin_types: dict[str, AtomicType]) -> str:
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include <etl/optional.h>
-#include <etl/string.h>
+#include <string>
 
 namespace Protocol {{
 
@@ -285,9 +284,8 @@ static inline bool decodeFloat32(
  * Decode string (variable length)
  * {desc}
  */
-template<size_t MAX_SIZE>
 static inline bool decodeString(
-    const uint8_t*& buf, size_t& remaining, etl::string<MAX_SIZE>& out) {{
+    const uint8_t*& buf, size_t& remaining, std::string& out) {{
 
     if (remaining < 1) return false;
 
@@ -295,9 +293,9 @@ static inline bool decodeString(
     remaining -= 1;
 
     if (remaining < len) return false;
-    if (len > MAX_SIZE) return false;  // String too long
 
     out.clear();
+    out.reserve(len);
     for (uint8_t i = 0; i < len; ++i) {{
         out.push_back(static_cast<char>(buf[i] & 0x7F));
     }}

@@ -140,12 +140,12 @@ class PrimitiveField(FieldBase):
         name: Field name
         type_name: Type enum reference (always defined for primitives)
         array: Array size (None = scalar, int > 0 = fixed-size array)
-        dynamic: If True, generate etl::vector instead of etl::array (default: False)
+        dynamic: If True, generate std::vector instead of std::array (default: False)
 
     Examples:
         >>> PrimitiveField('paramId', type_name=Type.UINT8)
         >>> PrimitiveField('colors', type_name=Type.UINT8, array=8)
-        >>> PrimitiveField('names', type_name=Type.STRING, array=32, dynamic=True)  # etl::vector
+        >>> PrimitiveField('names', type_name=Type.STRING, array=32, dynamic=True)  # std::vector
     """
 
     name: str

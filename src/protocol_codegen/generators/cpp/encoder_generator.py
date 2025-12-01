@@ -93,7 +93,7 @@ def _generate_header(builtin_types: dict[str, AtomicType]) -> str:
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include <etl/string.h>
+#include <string>
 
 namespace Protocol {{
 
@@ -239,8 +239,7 @@ static inline void encodeFloat32(uint8_t*& buf, float val) {{
  * Format: [length (7-bit)] [char0] [char1] ... [charN-1]
  * Max length: 127 chars (7-bit length encoding)
  */
-template<size_t MAX_SIZE>
-static inline void encodeString(uint8_t*& buf, const etl::string<MAX_SIZE>& str) {{
+static inline void encodeString(uint8_t*& buf, const std::string& str) {{
     uint8_t len = static_cast<uint8_t>(str.length()) & 0x7F;  // Max 127
     *buf++ = len;
 

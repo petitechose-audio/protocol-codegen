@@ -175,15 +175,15 @@ def _generate_limits(limits_config: LimitsConfig) -> str:
         "",
     ]
 
-    # String limits
-    string_max: int = limits_config.get("string_max_length", 16)
-    lines.append("    /** Maximum characters per string field */")
+    # String limits (7-bit protocol max = 127)
+    string_max: int = limits_config.get("string_max_length", 127)
+    lines.append("    /** Maximum characters per string field (7-bit encoding) */")
     lines.append(f"    public static final int STRING_MAX_LENGTH = {string_max};")
     lines.append("")
 
-    # Array limits
-    array_max: int = limits_config.get("array_max_items", 8)
-    lines.append("    /** Maximum items per array field */")
+    # Array limits (7-bit protocol max = 127)
+    array_max: int = limits_config.get("array_max_items", 127)
+    lines.append("    /** Maximum items per array field (7-bit count) */")
     lines.append(f"    public static final int ARRAY_MAX_ITEMS = {array_max};")
     lines.append("")
 

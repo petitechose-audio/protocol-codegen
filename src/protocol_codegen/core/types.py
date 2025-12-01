@@ -97,9 +97,9 @@ BUILTIN_TYPES: dict[str, BuiltinTypeDef] = {
     # String (variable length)
     "string": BuiltinTypeDef(
         name="string",
-        description="Variable-length UTF-8 string (prefixed with uint8 length, max 16 chars)",
+        description="Variable-length UTF-8 string (prefixed with uint8 length)",
         size_bytes="variable",
-        cpp_type="etl::string<STRING_MAX_LENGTH>",
+        cpp_type="std::string",
         java_type="String",
     ),
 }

@@ -9,7 +9,7 @@ while maintaining identical performance (compiler inlines everything).
 Key Features:
 - Calls Encoder::encodeXXX() instead of inline logic (DRY)
 - MAX_PAYLOAD_SIZE constexpr for validation
-- ETL optional for safe decoding
+- std::optional for safe decoding
 - Zero runtime overhead (static inline + compiler optimization)
 
 Generated Output:
@@ -107,9 +107,11 @@ def _generate_header(struct_name: str, description: str) -> str:
 #include "../MessageID.hpp"
 #include "../ProtocolConstants.hpp"
 #include "../Logger.hpp"
+#include <array>
 #include <cstdint>
-#include <etl/optional.h>
-#include <etl/vector.h>
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace Protocol {{
 
@@ -272,12 +274,12 @@ def _generate_decode_function(
         "     *",
         "     * @param data Input buffer with encoded data",
         "     * @param len Length of input buffer",
-        "     * @return Decoded struct, or etl::nullopt if invalid/insufficient data",
+        "     * @return Decoded struct, or std::nullopt if invalid/insufficient data",
         "     */",
-        f"    static etl::optional<{struct_name}> decode(",
+        f"    static std::optional<{struct_name}> decode(",
         "        const uint8_t* data, uint16_t len) {",
         "",
-        "        if (len < MIN_PAYLOAD_SIZE) return etl::nullopt;",
+        "        if (len < MIN_PAYLOAD_SIZE) return std::nullopt;",
         "",
     ]
 
@@ -304,13 +306,13 @@ def _generate_decode_function(
                 # Primitive array (e.g., string[16])
                 lines.append(f"        uint8_t count_{field.name};")
                 lines.append(
-                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;"
+                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return std::nullopt;"
                 )
                 cpp_type = _get_cpp_type_for_field(field, type_registry)
                 var_name = f"{field.name}_data"
                 lines.append(f"        {cpp_type} {var_name};")
 
-                # For etl::vector, use push_back; for etl::array, use direct indexing
+                # For std::vector, use push_back; for std::array, use direct indexing
                 if field.dynamic:
                     # Dynamic vector: decode into temp var and push_back
                     lines.append(
@@ -348,9 +350,9 @@ def _generate_decode_function(
                 # Decode array count (BUG FIX: use output parameter syntax)
                 lines.append(f"        uint8_t count_{field.name};")
                 lines.append(
-                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return etl::nullopt;"
+                    f"        if (!decodeUint8(ptr, remaining, count_{field.name})) return std::nullopt;"
                 )
-                # etl::array type (fixed size, but we fill based on count)
+                # std::array type (fixed size, but we fill based on count)
                 cpp_type = _get_cpp_type_for_field(field, type_registry)
                 lines.append(f"        {cpp_type} {var_name};")
                 # Use PascalCase struct name for item type (BUG FIX #4)
@@ -367,10 +369,10 @@ def _generate_decode_function(
                             # Nested array of primitives - decode count for dynamic arrays
                             lines.append(f"            uint8_t count_{nested_field.name};")
                             lines.append(
-                                f"            if (!decodeUint8(ptr, remaining, count_{nested_field.name})) return etl::nullopt;"
+                                f"            if (!decodeUint8(ptr, remaining, count_{nested_field.name})) return std::nullopt;"
                             )
 
-                            # For etl::vector, we need to use push_back instead of direct indexing
+                            # For std::vector, we need to use push_back instead of direct indexing
                             if nested_field.dynamic:
                                 # Dynamic vector: decode into temp var and push_back
                                 lines.append(
@@ -491,9 +493,9 @@ def _get_cpp_type(field_type: str, type_registry: TypeRegistry) -> str:
     if type_registry.is_atomic(field_type):
         atomic = type_registry.get(field_type)
         if atomic.is_builtin:
-            # Always use STRING_MAX_LENGTH constant for strings
+            # Use std::string for string type
             if field_type == "string":
-                return "etl::string<STRING_MAX_LENGTH>"
+                return "std::string"
             assert atomic.cpp_type is not None
             return atomic.cpp_type
         else:
@@ -554,20 +556,18 @@ def _get_decoder_call(
         decoder_name = f"decode{_capitalize_first(base_type)}"
         target = direct_target if direct_target else field_name
 
-        if base_type == "string":
-            decoder_call = f"{decoder_name}<STRING_MAX_LENGTH>(ptr, remaining, {target})"
-        else:
-            decoder_call = f"{decoder_name}(ptr, remaining, {target})"
+        # All types use the same call pattern now (no template for string)
+        decoder_call = f"{decoder_name}(ptr, remaining, {target})"
 
         # OPTION B: Direct pattern if direct_target provided
         if direct_target:
-            return f"if (!{decoder_call}) return etl::nullopt;"
+            return f"if (!{decoder_call}) return std::nullopt;"
         else:
             return f"""{cpp_type} {field_name};
-        if (!{decoder_call}) return etl::nullopt;"""
+        if (!{decoder_call}) return std::nullopt;"""
     else:
         return f"""auto {field_name} = {base_type}::decode(ptr, remaining);
-        if (!{field_name}) return etl::nullopt;
+        if (!{field_name}) return std::nullopt;
         ptr += {base_type}::MAX_PAYLOAD_SIZE;
         remaining -= {base_type}::MAX_PAYLOAD_SIZE;"""
 
@@ -819,14 +819,14 @@ def _generate_single_composite_struct(field: CompositeField, type_registry: Type
             # Get base C++ type without array wrapper
             base_type = _get_cpp_type(nested_field.type_name.value, type_registry)
             if nested_field.array:
-                # Use etl::vector for dynamic arrays, etl::array for fixed
+                # Use std::vector for dynamic arrays, std::array for fixed
                 if nested_field.dynamic:
                     lines.append(
-                        f"    etl::vector<{base_type}, {nested_field.array}> {nested_field.name};"
+                        f"    std::vector<{base_type}> {nested_field.name};"
                     )
                 else:
                     lines.append(
-                        f"    etl::array<{base_type}, {nested_field.array}> {nested_field.name};"
+                        f"    std::array<{base_type}, {nested_field.array}> {nested_field.name};"
                     )
             else:
                 lines.append(f"    {base_type} {nested_field.name};")
@@ -835,7 +835,7 @@ def _generate_single_composite_struct(field: CompositeField, type_registry: Type
             nested_struct_name = _field_to_pascal_case(nested_field.name)
             if nested_field.array:
                 lines.append(
-                    f"    etl::array<{nested_struct_name}, {nested_field.array}> {nested_field.name};"
+                    f"    std::array<{nested_struct_name}, {nested_field.array}> {nested_field.name};"
                 )
             else:
                 lines.append(f"    {nested_struct_name} {nested_field.name};")
@@ -853,16 +853,16 @@ def _get_cpp_type_for_field(field: FieldBase, type_registry: TypeRegistry) -> st
         assert isinstance(field, PrimitiveField)
         base_type = _get_cpp_type(field.type_name.value, type_registry)
         if field.array:
-            # Use etl::vector for dynamic arrays, etl::array for fixed
+            # Use std::vector for dynamic arrays, std::array for fixed
             if field.dynamic:
-                return f"etl::vector<{base_type}, {field.array}>"
+                return f"std::vector<{base_type}>"
             else:
-                return f"etl::array<{base_type}, {field.array}>"
+                return f"std::array<{base_type}, {field.array}>"
         return base_type
     else:  # Composite
         assert isinstance(field, CompositeField)
         # BUG FIX #4: Convert camelCase to PascalCase
         struct_name = _field_to_pascal_case(field.name)
         if field.array:
-            return f"etl::array<{struct_name}, {field.array}>"
+            return f"std::array<{struct_name}, {field.array}>"
         return struct_name

@@ -24,9 +24,8 @@ BUILTIN_SYSEX_CONFIG = SysExConfig(
         payload_offset=5,  # After from_host flag
     ),
     limits=SysExLimits(
-        string_max_length=16,  # Max string length: 16 chars
-        array_max_items=32,  # Max array size: 32 items
-        max_payload_size=128,  # Max payload bytes
-        max_message_size=256,  # Max total message size
+        # string_max_length and array_max_items use protocol defaults (127)
+        max_payload_size=512,  # Max payload bytes
+        max_message_size=1024,  # Max total message size
     ),
 )

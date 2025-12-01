@@ -122,16 +122,26 @@ class SysExLimits(BaseModel):
 
     Defines maximum sizes for various data types to prevent buffer overflows
     and ensure MIDI-safe encoding.
+
+    Note: With std:: containers, these are soft limits for validation only.
+    The protocol-level limits are:
+    - String: 127 chars (7-bit length encoding)
+    - Array: 127 items (7-bit count encoding)
     """
 
     string_max_length: int = Field(
-        default=16,
+        default=127,
         gt=0,
         le=127,
         description="Max characters per string field (7-bit length encoding: 0-127)",
     )
 
-    array_max_items: int = Field(default=8, gt=0, le=255, description="Max items per array field")
+    array_max_items: int = Field(
+        default=127,
+        gt=0,
+        le=127,
+        description="Max items per array field (7-bit count encoding: 0-127)",
+    )
 
     max_payload_size: int = Field(
         default=256,

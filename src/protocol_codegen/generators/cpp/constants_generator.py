@@ -179,16 +179,16 @@ def _generate_limits(limits_config: LimitsConfig, uint8_type: str, uint16_type: 
         "",
     ]
 
-    # String limits
-    string_max: int = limits_config.get("string_max_length", 16)
+    # String limits (7-bit protocol max = 127)
+    string_max: int = limits_config.get("string_max_length", 127)
     lines.append(
-        f"constexpr {uint8_type} STRING_MAX_LENGTH = {string_max};  // Max chars per string field"
+        f"constexpr {uint8_type} STRING_MAX_LENGTH = {string_max};  // Max chars per string (7-bit encoding)"
     )
 
-    # Array limits
-    array_max: int = limits_config.get("array_max_items", 8)
+    # Array limits (7-bit protocol max = 127)
+    array_max: int = limits_config.get("array_max_items", 127)
     lines.append(
-        f"constexpr {uint8_type} ARRAY_MAX_ITEMS = {array_max};      // Max items per array field"
+        f"constexpr {uint8_type} ARRAY_MAX_ITEMS = {array_max};      // Max items per array (7-bit count)"
     )
 
     # Payload limits
